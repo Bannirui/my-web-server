@@ -13,11 +13,3 @@ add_library(${PROJECT_NAME} STATIC ${srcs} ${hdrs})
 target_include_directories(${PROJECT_NAME}
         SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
-target_link_libraries(${PROJECT_NAME}
-        PUBLIC spdlog
-        PUBLIC glad
-        PUBLIC glfw
-        PUBLIC imgui
-        PUBLIC glm
-        PUBLIC stb
-)
