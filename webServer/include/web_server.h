@@ -26,6 +26,8 @@ public:
 
 private:
     int m_port;
+    // socket fd
+    ResourceGuard<int>* m_socketId;
     // mac io selector, kqueue
     ResourceGuard<int>* m_kqId;
 };
