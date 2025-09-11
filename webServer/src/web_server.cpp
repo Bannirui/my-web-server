@@ -3,14 +3,38 @@
 //
 
 #include <iostream>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/event.h>
+#include <unistd.h>
+#include <assert.h>
 
 #include "web_server.h"
+#include "resource_guard.h"
 
 WebServer::WebServer() {}
-WebServer::~WebServer() {}
+WebServer::~WebServer()
+{
+    delete m_kqId;
+}
 void WebServer::init(int port) {}
+void WebServer::listen()
+{
+    this->m_kqId = new ResourceGuard<int>(kqueue(),
+                                          [](int fd)
+                                          {
+                                              if (fd != -1)
+                                              {
+                                                  if (close(fd) == -1) perror("close");
+                                              }
+                                          });
+    assert(this->m_kqId->get() != -1);
+}
 void WebServer::run()
 {
-    std::cout << "服务运行" << std::endl;
+    bool stop_server = false;
+    while (!stop_server)
+    {
+        std::cout << "服务运行 kqueue的id是" << this->m_kqId->get() << std::endl;
+    }
 }
-void WebServer::listen() {}

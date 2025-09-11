@@ -4,6 +4,14 @@
 
 #pragma once
 
+#define TRY_CLOSE(fd)            \
+    {                            \
+        if (fd != -1) close(fd); \
+    }
+
+template <typename T>
+class ResourceGuard;  // 前向声明
+
 class WebServer
 {
 public:
@@ -13,11 +21,11 @@ public:
      * @param port 服务端口
      */
     void init(int port);
+    void listen();
     void run();
 
 private:
-    void listen();
-
-public:
     int m_port;
+    // mac io selector, kqueue
+    ResourceGuard<int>* m_kqId;
 };

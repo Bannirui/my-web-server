@@ -7,6 +7,7 @@
 int main()
 {
     WebServer server;
+    server.listen();
     server.run();
     return 0;
 }
