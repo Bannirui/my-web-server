@@ -6,8 +6,8 @@
 
 int main()
 {
-    WebServer server;
-    server.listen();
+    WebServer server(9527, true);
+    server.doListen();
     server.run();
     return 0;
 }
