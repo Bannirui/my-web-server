@@ -7,8 +7,6 @@
 
 int main()
 {
-    MyLog::Init();
-
     WebServer server(9527, true);
     server.doListen();
     server.run();

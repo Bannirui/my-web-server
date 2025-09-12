@@ -2,8 +2,6 @@
 // Created by rui ding on 2025/9/12.
 //
 
-#include <spdlog/sinks/stdout_color_sinks-inl.h>
-
 #include "log/log.h"
 
 std::shared_ptr<spdlog::logger> MyLog::logger;
