@@ -31,10 +31,15 @@ MyKqueue::MyKqueue(TriggerMode mode)
     }
     MY_LOG_INFO("kqueue{}创建成功", this->m_kq.get());
 }
-void MyKqueue::addReadEvent(int fd) const
+void MyKqueue::addReadEvent(int fd, bool oneShot) const
 {
     struct kevent ev{};
-    EV_SET(&ev, fd, EVFILT_READ, EV_ADD | getFlags(), 0, 0, nullptr);
+    int           flags = EV_ADD;
+    // 边缘触发 水平触发
+    flags |= this->getFlags();
+    // 一次性事件
+    if (oneShot) flags |= EV_ONESHOT;
+    EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, nullptr);
     if (kevent(m_kq.get(), &ev, 1, nullptr, 0, nullptr) == -1)
     {
         MY_LOG_ERROR("向kqueue{}添加读事件{}失败", this->getFd(), fd);
@@ -85,4 +90,13 @@ std::vector<struct kevent> MyKqueue::wait(int timeoutMs) const
 int MyKqueue::getFlags() const
 {
     return (m_mode == TriggerMode::EDGE) ? EV_CLEAR : 0;
+}
+void MyKqueue::addSignal(int sig) const
+{
+    // 注册信号 让信号进入kqueue
+    struct kevent ev;
+    EV_SET(&ev, sig, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
+    assert(kevent(this->getFd(), &ev, 1, NULL, 0, NULL) != -1);
+    // 交给kqueue 不让默认处理 确保不会被默认终止/忽略
+    signal(sig, SIG_IGN);
 }

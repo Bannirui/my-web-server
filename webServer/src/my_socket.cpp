@@ -7,11 +7,12 @@
 #include <cstring>
 #include <cassert>
 #include <stdexcept>
+#include <netinet/in.h>
+#include <sys/fcntl.h>
 
 #include "my_socket.h"
 #include "log/log.h"
-
-#include <netinet/in.h>
+#include "util/fd_util.h"
 
 MySocket::MySocket()
     : m_fd(socket(PF_INET, SOCK_STREAM, 0),
@@ -53,6 +54,26 @@ void MySocket::setLinger(bool enable, int timeoutSec) const
         MY_LOG_INFO("设置socket立即关闭");
     }
     setsockopt(m_fd.get(), SOL_SOCKET, SO_LINGER, &opt, sizeof(opt));
+}
+
+void MySocket::setNonBlocking(bool nonBlocking) const
+{
+    int flags = fcntl(this->m_fd.get(), F_GETFL, 0);
+    if (flags == -1)
+    {
+        throw std::system_error(errno, std::generic_category(), "fcntl系统调用失败");
+    }
+    if (nonBlocking)
+    {
+        FdUtil::setNonBlocking(this->m_fd.get());
+    }
+    else
+    {
+        if (fcntl(this->m_fd.get(), F_SETFL, flags & ~O_NONBLOCK) == -1)
+        {
+            throw std::system_error(errno, std::generic_category(), "fcntl系统调用设置socket阻塞失败");
+        }
+    }
 }
 
 void MySocket::setReuseAddr(bool enable) const

@@ -27,10 +27,11 @@ public:
      * @param timeoutSec 阻塞等待的窗口期
      */
     void setLinger(bool enable, int timeoutSec = 1) const;
+    void setNonBlocking(bool nonBlocking = true) const;
     /**
      * 端口重用
      */
-    void setReuseAddr(bool enable) const;
+    void setReuseAddr(bool enable = true) const;
     /**
      * 被动socket转换主动socket 绑定端口
      */
