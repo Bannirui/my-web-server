@@ -4,13 +4,9 @@
 
 #pragma once
 
-#define TRY_CLOSE(fd)            \
-    {                            \
-        if (fd != -1) close(fd); \
-    }
-
+// 前向声明
 template <typename T>
-class ResourceGuard;  // 前向声明
+class ResourceGuard;
 
 class WebServer
 {
@@ -21,7 +17,6 @@ public:
      */
     WebServer(int port, bool optLinger);
     ~WebServer();
-    void doListen();
     void run();
 
 private:
