@@ -3,9 +3,12 @@
 //
 
 #include "web_server.h"
+#include "log/log.h"
 
 int main()
 {
+    MyLog::Init();
+
     WebServer server(9527, true);
     server.doListen();
     server.run();

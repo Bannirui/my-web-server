@@ -2,7 +2,6 @@
 // Created by rui ding on 2025/9/11.
 //
 
-#include <iostream>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/event.h>
@@ -12,6 +11,7 @@
 
 #include "web_server.h"
 #include "resource_guard.h"
+#include "log/log.h"
 
 WebServer::WebServer(int port, bool optLinger) : m_port(port), m_optLinger(optLinger) {}
 WebServer::~WebServer()
@@ -34,12 +34,14 @@ void WebServer::doListen()
     // 设置socket优雅关闭
     if (this->m_optLinger)
     {
+        MY_LOG_INFO("设置socket优雅关闭");
         // 等1s给内核个缓冲时间
         struct linger tmp = {1, 1};
         setsockopt(this->m_socketId->get(), SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
     }
     else
     {
+        MY_LOG_INFO("设置socket立即关闭");
         struct linger tmp = {0, 1};
         setsockopt(this->m_socketId->get(), SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
     }
@@ -79,7 +81,6 @@ void WebServer::run()
     bool stop_server = false;
     while (!stop_server)
     {
-        std::cout << "服务运行中"
-                  << "socket是" << this->m_socketId->get() << " kqueue的id是" << this->m_kqId->get() << std::endl;
+        MY_LOG_INFO("服务运行中 socket是{0} kqueue是{1}", this->m_socketId->get(), this->m_kqId->get());
     }
 }

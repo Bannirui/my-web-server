@@ -1,7 +1,7 @@
 project(web-server VERSION 1.0 LANGUAGES CXX)
 
 # 依赖的三方库
-#include(${CMAKE_SOURCE_DIR}/cmake/stb.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/spdlog.cmake)
 
 # 开始编译自己的项目
 file(GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
@@ -12,4 +12,8 @@ add_library(${PROJECT_NAME} STATIC ${srcs} ${hdrs})
 
 target_include_directories(${PROJECT_NAME}
         SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+# lib
+target_link_libraries(${PROJECT_NAME}
+        PUBLIC spdlog
 )
