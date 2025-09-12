@@ -6,7 +6,7 @@
 #include <dirent.h>
 #include <functional>
 
-/// 通用 RAII 资源管理类
+/// 通用RAII资源管理类
 template <typename T>
 class ResourceGuard
 {

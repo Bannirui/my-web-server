@@ -8,6 +8,7 @@
 #include <spdlog/sinks/stdout_color_sinks-inl.h>
 
 #define MY_LOG_INFO(...) MyLog::GetLogger()->info(__VA_ARGS__)
+#define MY_LOG_ERROR(...) MyLog::GetLogger()->error(__VA_ARGS__)
 
 class MyLog
 {

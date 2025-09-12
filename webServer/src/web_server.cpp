@@ -85,6 +85,7 @@ WebServer::WebServer(int port, bool optLinger) : m_port(port), m_optLinger(optLi
                                           });
     assert(this->m_kqId->get() != -1);
     MY_LOG_INFO("kqueue{}创建成功", this->m_kqId->get());
+
 }
 WebServer::~WebServer()
 {
