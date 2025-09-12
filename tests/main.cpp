@@ -3,7 +3,6 @@
 //
 
 #include "web_server.h"
-#include "log/log.h"
 
 int main()
 {

@@ -1,6 +1,9 @@
 //
 // Created by rui ding on 2025/9/11.
 //
+
+#pragma once
+
 #include <unistd.h>
 #include <cstdio>
 #include <dirent.h>

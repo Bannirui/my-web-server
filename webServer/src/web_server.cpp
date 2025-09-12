@@ -13,7 +13,7 @@
 #include "util/resource_guard.h"
 #include "log/log.h"
 
-WebServer::WebServer(int port, bool optLinger) : m_port(port), m_optLinger(optLinger)
+WebServer::WebServer(int port, bool optLinger, TriggerMode mode) : m_port(port), m_optLinger(optLinger), m_kq(mode)
 {
     // socket
     this->m_socketId = new ResourceGuard<int>(socket(PF_INET, SOCK_STREAM, 0),
@@ -70,27 +70,10 @@ WebServer::WebServer(int port, bool optLinger) : m_port(port), m_optLinger(optLi
     ret         = listen(this->m_socketId->get(), backlog);
     assert(ret >= 0);
     MY_LOG_INFO("socket{}监听端口{}", this->m_socketId->get(), this->m_port);
-    // kqueue
-    this->m_kqId = new ResourceGuard<int>(kqueue(),
-                                          [](int fd)
-                                          {
-                                              if (close(fd) == -1)
-                                              {
-                                                  perror("close");
-                                              }
-                                              else
-                                              {
-                                                  MY_LOG_INFO("socket{}关闭", fd);
-                                              }
-                                          });
-    assert(this->m_kqId->get() != -1);
-    MY_LOG_INFO("kqueue{}创建成功", this->m_kqId->get());
-
 }
 WebServer::~WebServer()
 {
     delete m_socketId;
-    delete m_kqId;
 }
 void WebServer::run()
 {
