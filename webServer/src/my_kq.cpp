@@ -29,6 +29,7 @@ MyKqueue::MyKqueue(TriggerMode mode)
     {
         throw std::runtime_error("kqueue创建失败");
     }
+    MY_LOG_INFO("kqueue{}创建成功", this->m_kq.get());
 }
 void MyKqueue::addReadEvent(int fd) const
 {
