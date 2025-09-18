@@ -94,9 +94,9 @@ int MyKqueue::getFlags() const
 void MyKqueue::addSignal(int sig) const
 {
     // 注册信号 让信号进入kqueue
-    struct kevent ev;
+    struct kevent ev{};
     EV_SET(&ev, sig, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
-    assert(kevent(this->getFd(), &ev, 1, NULL, 0, NULL) != -1);
+    assert(kevent(this->getFd(), &ev, 1, nullptr, 0, nullptr) != -1);
     // 交给kqueue 不让默认处理 确保不会被默认终止/忽略
     signal(sig, SIG_IGN);
 }

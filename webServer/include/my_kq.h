@@ -43,6 +43,7 @@ public:
     std::vector<struct kevent> wait(int timoutMs = -1) const;
 
     /**
+     * 把关心的信号注册到selector上
      * 通过监听信号实现特定信号的处理 替代了信号回调函数的方式
      * @param sig 注册信号
      */
