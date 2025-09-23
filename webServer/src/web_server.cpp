@@ -12,9 +12,9 @@
 #include "web_server.h"
 #include "log/log.h"
 #include "util/fd_util.h"
-#include "my_http.h"
+#include "my_http_conn.h"
 
-WebServer::WebServer(int port, bool optLinger, TriggerMode mode) : m_port(port), m_kq(mode)
+WebServer::WebServer(int port, bool optLinger, TriggerMode mode) : m_port(port), _selector(mode)
 {
     // socket已经在参数列表中初始化好了 开始设置属性
     this->m_listenSocket.setLinger(optLinger);
@@ -23,23 +23,29 @@ WebServer::WebServer(int port, bool optLinger, TriggerMode mode) : m_port(port),
     this->m_listenSocket.bind(port);
     this->m_listenSocket.listen();
     // socket注册到selector
-    this->m_kq.addReadEvent(this->m_listenSocket.getFd(), false);
+    this->_selector.AddReadEvent(this->m_listenSocket.getFd(), false);
     // 在当前系统退化成单向通道 读写都是非阻塞 但是只注册读端到selector
     int ret = socketpair(PF_UNIX, SOCK_STREAM, 0, m_pipefd);
     assert(ret != -1);
     // 写端 显式设置非阻塞
     FdUtil::setNonBlocking(m_pipefd[1]);
     // 读端会在注册selector的时候被设置成非阻塞
-    this->m_kq.addReadEvent(m_pipefd[0]);
+    this->_selector.AddReadEvent(m_pipefd[0]);
     // 在Linux/Unix下 如果往一个已经关闭的socket写数据 会触发SIGPIPE 默认行为是进程直接退出 所以必须忽略
     // 否则服务器写数据时会被kill掉 在事件循环中拿到这个信号就忽略实现忽略写关闭错误
-    this->m_kq.addSignal(SIGPIPE);
+    this->_selector.addSignal(SIGPIPE);
     // 定时信号 捕获SIGALRM信号 配合selector实现定时任务的处理
-    this->m_kq.addSignal(SIGALRM);
+    this->_selector.addSignal(SIGALRM);
     // 捕获SIGTERM终止信号 这样服务器可以优雅关闭 而不是被系统直接kill
-    this->m_kq.addSignal(SIGTERM);
+    this->_selector.addSignal(SIGTERM);
     // 设置一个定时器(秒级) 到时间后会发SIGALRM信号 实现定时任务
     alarm(COMMON_FILE_INTERVAL_SECONDS);
+    // 连接池
+    _userConns = new MyHttpConn[MAX_FD];
+    MY_LOG_INFO("初始化了连接池");
+    // 连接管理
+    _userConnTimers = new Timer*[MAX_FD];
+    MY_LOG_INFO("初始化了连接的定时器数组");
 }
 WebServer::~WebServer()
 {
@@ -52,6 +58,10 @@ WebServer::~WebServer()
     {
         close(m_pipefd[1]);
     }
+    delete[] _userConns;
+    MY_LOG_INFO("释放了连接池");
+    delete[] _userConnTimers;
+    MY_LOG_INFO("释放了连接的定时器数组");
 }
 
 void WebServer::run()
@@ -62,7 +72,7 @@ void WebServer::run()
     while (!stop_server)
     {
         // kevent等待事件
-        int number = kevent(m_kq.getFd(), nullptr, 0, events, MAX_EVENT_NUMBER, nullptr);
+        int number = kevent(_selector.getFd(), nullptr, 0, events, MAX_EVENT_NUMBER, nullptr);
         if (number < 0 && errno != EINTR)
         {
             MY_LOG_ERROR("kqueue获取就绪事件失败");
@@ -115,7 +125,7 @@ bool WebServer::processClient()
 {
     struct sockaddr_in client_address;
     socklen_t          client_addrlength = sizeof(client_address);
-    if (this->m_kq.LT_Mode())
+    if (this->_selector.LT_Mode())
     {
         // 水平触发
         int connfd = accept(this->m_listenSocket.getFd(), (struct sockaddr*)&client_address, &client_addrlength);
@@ -124,24 +134,27 @@ bool WebServer::processClient()
             MY_LOG_ERROR("获取客户端连接 拿到的socket是{}异常", connfd);
             return false;
         }
-        if (my_http::s_user_count >= MAX_FD)
+        if (MyHttpConn::s_user_count >= MAX_FD)
         {
             sendToSocket(connfd, "internal server busy", [](uint32_t socketFd) { close(socketFd); });
             MY_LOG_INFO(
                 "当前客户端连接对应的socket是{} 已经建立的连接数{} 系统设置的连接数上限是{} 等等连接资源释放出来",
-                connfd, my_http::s_user_count, MAX_FD);
+                connfd, MyHttpConn::s_user_count, MAX_FD);
             return false;
         }
-        // 新连接加入kqueue
-        struct kevent ev;
-        EV_SET(&ev, connfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-        if (kevent(this->m_kq.getFd(), &ev, 1, nullptr, 0, nullptr) == -1)
+        // 注册到复用器等客户端写来的数据
+        if (!this->_selector.AddReadEvent(connfd, false))
         {
-            MY_LOG_ERROR("把客户端连接加到kq{}失败{}", this->m_kq.getFd(), errno);
+            MY_LOG_ERROR("把客户端连接加到kq{}失败{}", this->_selector.getFd(), errno);
             close(connfd);
             return false;
         }
-        // todo 新建连接
+        // 新建连接
+        _userConns[connfd].Init(connfd, client_address, &this->_selector);
+        // 连接托管给定时器
+        time_t cur              = time(NULL);
+        Timer* timer            = new Timer(cur + 3 * TIMER_INTERVAL, &_userConns[connfd]);
+        _userConnTimers[connfd] = timer;
     }
     else
     {
@@ -155,24 +168,27 @@ bool WebServer::processClient()
                 MY_LOG_ERROR("获取客户端连接 拿到的socket是{}异常", connfd);
                 break;
             }
-            if (my_http::s_user_count >= MAX_FD)
+            if (MyHttpConn::s_user_count >= MAX_FD)
             {
                 sendToSocket(connfd, "internal server busy", [](uint32_t socketFd) { close(socketFd); });
                 MY_LOG_INFO(
                     "当前客户端连接对应的socket是{} 已经建立的连接数{} 系统设置的连接数上限是{} 等等连接资源释放出来",
-                    connfd, my_http::s_user_count, MAX_FD);
+                    connfd, MyHttpConn::s_user_count, MAX_FD);
                 break;
             }
-            // 新连接加入kqueue(ET模式)
-            struct kevent ev;
-            EV_SET(&ev, connfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
-            if (kevent(this->m_kq.getFd(), &ev, 1, nullptr, 0, nullptr) == -1)
+            // 新连接加入kqueue(ET模式) 注册到复用器等客户端写来的数据
+            if (!this->_selector.AddReadEvent(connfd, false))
             {
-                MY_LOG_ERROR("把客户端连接加到kq{}失败{}", this->m_kq.getFd(), errno);
+                MY_LOG_ERROR("把客户端连接加到kq{}失败{}", this->_selector.getFd(), errno);
                 close(connfd);
                 continue;
             }
-            // todo 新建连接
+            // 新建连接
+            _userConns[connfd].Init(connfd, client_address, &this->_selector);
+            // 连接托管给定时器
+            time_t cur              = time(NULL);
+            Timer* timer            = new Timer(cur + 3 * TIMER_INTERVAL, &_userConns[connfd]);
+            _userConnTimers[connfd] = timer;
         }
         return false;
     }

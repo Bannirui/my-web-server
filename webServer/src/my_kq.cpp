@@ -31,7 +31,7 @@ MyKqueue::MyKqueue(TriggerMode mode)
     }
     MY_LOG_INFO("kqueue{}创建成功", this->m_kq.get());
 }
-void MyKqueue::addReadEvent(int fd, bool oneShot) const
+bool MyKqueue::AddReadEvent(int fd, bool oneShot) const
 {
     struct kevent ev{};
     int           flags = EV_ADD;
@@ -43,22 +43,26 @@ void MyKqueue::addReadEvent(int fd, bool oneShot) const
     if (kevent(m_kq.get(), &ev, 1, nullptr, 0, nullptr) == -1)
     {
         MY_LOG_ERROR("向kqueue{}添加读事件{}失败", this->getFd(), fd);
-        throw std::runtime_error("向kqueue添加读事件失败");
+        return false;
     }
+    MY_LOG_INFO("向selector{}添加可读事件{}成功", this->getFd(), fd);
+    return true;
 }
 
-void MyKqueue::addWriteEvent(int fd) const
+bool MyKqueue::AddWriteEvent(int fd) const
 {
     struct kevent ev{};
     EV_SET(&ev, fd, EVFILT_WRITE, EV_ADD | getFlags(), 0, 0, nullptr);
     if (kevent(m_kq.get(), &ev, 1, nullptr, 0, nullptr) == -1)
     {
         MY_LOG_ERROR("向kqueue{}添加写事件{}失败", this->getFd(), fd);
-        throw std::runtime_error("向kqueue添加写事件失败");
+        return false;
     }
+    MY_LOG_ERROR("向kqueue{}添加写事件{}成功", this->getFd(), fd);
+    return true;
 }
 
-void MyKqueue::removeEvent(int fd, int filter) const
+void MyKqueue::RemoveEvent(int fd, int filter) const
 {
     struct kevent ev{};
     EV_SET(&ev, fd, filter, EV_DELETE, 0, 0, nullptr);

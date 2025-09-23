@@ -37,9 +37,14 @@ public:
      * @param fd
      * @param oneShot
      */
-    void                       addReadEvent(int fd, bool oneShot = false) const;
-    void                       addWriteEvent(int fd) const;
-    void                       removeEvent(int fd, int filter) const;
+    bool AddReadEvent(int fd, bool oneShot = false) const;
+    bool AddWriteEvent(int fd) const;
+    /**
+     * 从复用器上移除对事件的监听
+     * @param fd 被监听的socket
+     * @param filter 事件类型 EVFILT_READ可读事件 EVFILT_WRITE可写事件
+     */
+    void                       RemoveEvent(int fd, int filter) const;
     std::vector<struct kevent> wait(int timoutMs = -1) const;
 
     /**
@@ -56,6 +61,7 @@ public:
      * @return 水平触发返回TRUE 边缘触发返回FALSE
      */
     bool LT_Mode() const;
+
 private:
     int getFlags() const;
 
