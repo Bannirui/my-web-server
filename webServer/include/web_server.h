@@ -7,7 +7,9 @@
 #include "my_kq.h"
 #include "my_socket.h"
 
-#define MAX_EVENT_NUMBER (1<<10)
+#define MAX_EVENT_NUMBER (1 << 10)
+
+const int MAX_FD = 65536;  // 最大文件描述符
 
 class WebServer
 {
@@ -29,10 +31,19 @@ public:
     bool processSig(bool& timeout, bool& stopServer);
 
 private:
-    int m_port;
+    /**
+     * 向socket发送消息
+     * @param fd 向哪个socket发消息
+     * @param msg 要发送的消息
+     * @param postFn 回调函数
+     */
+    void sendToSocket(uint32_t fd, const char* msg, std::function<void(uint32_t)> postFn);
+
+private:
+    int      m_port;
     MyKqueue m_kq;
     MySocket m_listenSocket;
     // 共享信号 类似golang中的channel机制 在本地创建一条两端连接的套接字通信 [0]负责读 [1]负责写
     // 这个生产者消费者模型 系统层面是全双工模式
-    int m_pipefd[2]{-1,-1};
+    int m_pipefd[2]{-1, -1};
 };

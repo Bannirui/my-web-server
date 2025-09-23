@@ -4,8 +4,8 @@
 
 #include <sys/event.h>
 
-#include "my_kq.h"
-#include "log/log.h"
+#include "../include/my_kq.h"
+#include "../include/log/log.h"
 
 MyKqueue::MyKqueue(TriggerMode mode)
     : m_kq(kqueue(),
@@ -99,4 +99,8 @@ void MyKqueue::addSignal(int sig) const
     assert(kevent(this->getFd(), &ev, 1, nullptr, 0, nullptr) != -1);
     // 交给kqueue 不让默认处理 确保不会被默认终止/忽略
     signal(sig, SIG_IGN);
+}
+bool MyKqueue::LT_Mode() const
+{
+    return m_mode == TriggerMode::LEVEL;
 }

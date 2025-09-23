@@ -52,6 +52,10 @@ public:
     // SIGPIPE 忽略掉
     // SIGALARM 处理 实现定时任务
     // SIGTERM 处理 实现优雅退出
+    /**
+     * @return 水平触发返回TRUE 边缘触发返回FALSE
+     */
+    bool LT_Mode() const;
 private:
     int getFlags() const;
 

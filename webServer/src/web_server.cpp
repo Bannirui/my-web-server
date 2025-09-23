@@ -10,11 +10,11 @@
 #include <assert.h>
 
 #include "web_server.h"
-#include "util/resource_guard.h"
 #include "log/log.h"
 #include "util/fd_util.h"
+#include "my_http.h"
 
-WebServer::WebServer(int port, bool optLinger, TriggerMode mode) : m_port(port), m_kq(mode), m_listenSocket()
+WebServer::WebServer(int port, bool optLinger, TriggerMode mode) : m_port(port), m_kq(mode)
 {
     // socket已经在参数列表中初始化好了 开始设置属性
     this->m_listenSocket.setLinger(optLinger);
@@ -113,7 +113,69 @@ void WebServer::run()
 }
 bool WebServer::processClient()
 {
-    // todo
+    struct sockaddr_in client_address;
+    socklen_t          client_addrlength = sizeof(client_address);
+    if (this->m_kq.LT_Mode())
+    {
+        // 水平触发
+        int connfd = accept(this->m_listenSocket.getFd(), (struct sockaddr*)&client_address, &client_addrlength);
+        if (connfd < 0)
+        {
+            MY_LOG_ERROR("获取客户端连接 拿到的socket是{}异常", connfd);
+            return false;
+        }
+        if (my_http::s_user_count >= MAX_FD)
+        {
+            sendToSocket(connfd, "internal server busy", [](uint32_t socketFd) { close(socketFd); });
+            MY_LOG_INFO(
+                "当前客户端连接对应的socket是{} 已经建立的连接数{} 系统设置的连接数上限是{} 等等连接资源释放出来",
+                connfd, my_http::s_user_count, MAX_FD);
+            return false;
+        }
+        // 新连接加入kqueue
+        struct kevent ev;
+        EV_SET(&ev, connfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+        if (kevent(this->m_kq.getFd(), &ev, 1, nullptr, 0, nullptr) == -1)
+        {
+            MY_LOG_ERROR("把客户端连接加到kq{}失败{}", this->m_kq.getFd(), errno);
+            close(connfd);
+            return false;
+        }
+        // todo 新建连接
+    }
+    else
+    {
+        // 边缘触发
+        while (1)
+        {
+            int connfd = accept(this->m_listenSocket.getFd(), (struct sockaddr*)&client_address, &client_addrlength);
+            if (connfd < 0)
+            {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) break;  // 已经没有可接收的连接
+                MY_LOG_ERROR("获取客户端连接 拿到的socket是{}异常", connfd);
+                break;
+            }
+            if (my_http::s_user_count >= MAX_FD)
+            {
+                sendToSocket(connfd, "internal server busy", [](uint32_t socketFd) { close(socketFd); });
+                MY_LOG_INFO(
+                    "当前客户端连接对应的socket是{} 已经建立的连接数{} 系统设置的连接数上限是{} 等等连接资源释放出来",
+                    connfd, my_http::s_user_count, MAX_FD);
+                break;
+            }
+            // 新连接加入kqueue(ET模式)
+            struct kevent ev;
+            EV_SET(&ev, connfd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, NULL);
+            if (kevent(this->m_kq.getFd(), &ev, 1, nullptr, 0, nullptr) == -1)
+            {
+                MY_LOG_ERROR("把客户端连接加到kq{}失败{}", this->m_kq.getFd(), errno);
+                close(connfd);
+                continue;
+            }
+            // todo 新建连接
+        }
+        return false;
+    }
     return true;
 }
 void WebServer::processRead(uint32_t fd)
@@ -128,4 +190,12 @@ bool WebServer::processSig(bool& timeout, bool& stopServer)
 {
     // todo
     return true;
+}
+void WebServer::sendToSocket(uint32_t fd, const char* msg, std::function<void(uint32_t)> postFn)
+{
+    send(fd, msg, strlen(msg), 0);
+    if (postFn)
+    {
+        postFn(fd);
+    }
 }
