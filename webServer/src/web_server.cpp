@@ -46,6 +46,7 @@ WebServer::WebServer(int port, bool optLinger, TriggerMode mode) : m_port(port),
     // 连接管理
     _userConnTimers = new Timer*[MAX_FD];
     MY_LOG_INFO("初始化了连接的定时器数组");
+    _timerLst = TimerLst();
 }
 WebServer::~WebServer()
 {
@@ -80,6 +81,7 @@ void WebServer::run()
         }
         for (int i = 0; i < number; i++)
         {
+            // 这个socket是服务端对应的socket
             int sockfd = static_cast<int>(events[i].ident);
             if (sockfd == this->m_listenSocket.getFd() && events[i].filter == EVFILT_READ)
             {
@@ -92,7 +94,11 @@ void WebServer::run()
             else if (events[i].flags & EV_EOF || events[i].flags & EV_ERROR)
             {
                 // 服务器端关闭连接 移除对应的定时器
-                // todo
+                Timer* timer = _userConnTimers[sockfd];
+                if (timer)
+                {
+                    _timerLst.Del(timer);
+                }
             }
             else if ((sockfd == m_pipefd[0]) && events[i].filter == EVFILT_READ)
             {

@@ -16,6 +16,7 @@ class MyHttpConn;
  * 1 统一事件源
  * 2 基于升序链表的定时器
  * 3 处理非活动连接
+ * 在数组结构中扮演链表节点
  */
 class Timer
 {
@@ -23,6 +24,11 @@ public:
     Timer();
     Timer(time_t expire, MyHttpConn* conn);
     ~Timer();
+
+    /**
+     * 定时器
+     */
+    void Delete();
 
 private:
     Timer* prev;
@@ -32,4 +38,22 @@ private:
     time_t _expire;
     // 这个定时器负责管理哪个连接
     MyHttpConn* _conn;
+};
+
+/**
+ * 管理定时器的链表结构
+ */
+class TimerLst
+{
+public:
+    TimerLst();
+    ~TimerLst();
+
+    /**
+     * 从链表中移除节点
+     */
+    void Del(Timer* timer);
+private:
+    Timer* head;
+    Timer* tail;
 };

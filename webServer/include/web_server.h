@@ -55,4 +55,6 @@ private:
     MyHttpConn* _userConns;
     // 管理连接池的连接 定时器释放闲置连接资源
     Timer** _userConnTimers;
+    // 用链表组织定时器
+    TimerLst _timerLst;
 };

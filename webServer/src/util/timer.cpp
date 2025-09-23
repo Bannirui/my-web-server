@@ -6,3 +6,14 @@
 Timer::Timer() {}
 Timer::Timer(time_t expire, MyHttpConn* conn) : _expire(expire), _conn(conn) {}
 Timer::~Timer() {}
+void Timer::Delete()
+{
+    // todo
+}
+
+TimerLst::TimerLst() {}
+TimerLst::~TimerLst() {}
+void TimerLst::Del(Timer* timer)
+{
+    // todo
+}
