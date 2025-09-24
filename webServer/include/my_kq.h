@@ -53,10 +53,6 @@ public:
      * @param sig 注册信号
      */
     void addSignal(int sig) const;
-    // todo 事件循环中处理3个信号
-    // SIGPIPE 忽略掉
-    // SIGALARM 处理 实现定时任务
-    // SIGTERM 处理 实现优雅退出
     /**
      * @return 水平触发返回TRUE 边缘触发返回FALSE
      */

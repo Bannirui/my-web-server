@@ -32,6 +32,14 @@ public:
     bool processClient();
     void processRead(uint32_t fd);
     void processWrite(uint32_t fd);
+    /**
+     * SIGPIPE 忽略掉 不需要处理
+     * SIGALARM 处理 实现定时任务
+     * SIGTERM 处理 实现优雅退出
+     * @param timeout 复用器上拿到了SIGALARM 这是我自己之前注册在复用器上的 说明定时器到期了
+     * @param stopServer 复用器上拿到了SIGTERM 根据这个信号实现优雅停机
+     * @return
+     */
     bool processSig(bool& timeout, bool& stopServer);
 
 private:
@@ -39,9 +47,9 @@ private:
      * 向socket发送消息
      * @param fd 向哪个socket发消息
      * @param msg 要发送的消息
-     * @param postFn 回调函数
+     * @param callBack 回调函数
      */
-    void sendToSocket(uint32_t fd, const char* msg, std::function<void(uint32_t)> postFn);
+    void sendToSocket(uint32_t fd, const char* msg, std::function<void(uint32_t)> callBack);
 
 private:
     int m_port;

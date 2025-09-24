@@ -67,7 +67,9 @@ WebServer::~WebServer()
 
 void WebServer::run()
 {
+    // 标识在复用器上的定时器到期了
     bool          timeout     = false;
+    // 拿到SIGTERM信号 实现优雅停机
     bool          stop_server = false;
     struct kevent events[MAX_EVENT_NUMBER];
     while (!stop_server)
@@ -210,14 +212,38 @@ void WebServer::processWrite(uint32_t fd)
 }
 bool WebServer::processSig(bool& timeout, bool& stopServer)
 {
-    // todo
+    int  ret = 0;
+    char signals[1024];
+    ret = recv(m_pipefd[0], signals, sizeof(signals), 0);
+    if (ret <= 0)
+    {
+        return false;
+    }
+    for (int i = 0; i < ret; ++i)
+    {
+        switch (signals[i])
+        {
+            case SIGALRM:
+            {
+                // 我自己注册在复用器上的定时器到期了
+                timeout = true;
+                break;
+            }
+            case SIGTERM:
+            {
+                // 根据这个信号优雅停机
+                stopServer = true;
+                break;
+            }
+        }
+    }
     return true;
 }
-void WebServer::sendToSocket(uint32_t fd, const char* msg, std::function<void(uint32_t)> postFn)
+void WebServer::sendToSocket(uint32_t fd, const char* msg, std::function<void(uint32_t)> callBack)
 {
     send(fd, msg, strlen(msg), 0);
-    if (postFn)
+    if (callBack)
     {
-        postFn(fd);
+        callBack(fd);
     }
 }
