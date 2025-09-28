@@ -7,6 +7,7 @@
 #include "my_http_conn.h"
 #include "my_kq.h"
 #include "my_socket.h"
+#include "queue/my_thread_pool.h"
 #include "util/timer.h"
 
 #define MAX_EVENT_NUMBER (1 << 10)
@@ -65,4 +66,6 @@ private:
     Timer** _userConnTimers;
     // 用链表组织定时器
     TimerLst _timerLst;
+    // 线程池
+    MyThreadPool<MyHttpConn>* _threadPool;
 };

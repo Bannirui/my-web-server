@@ -47,6 +47,9 @@ WebServer::WebServer(int port, bool optLinger, TriggerMode mode) : m_port(port),
     _userConnTimers = new Timer*[MAX_FD];
     MY_LOG_INFO("初始化了连接的定时器数组");
     _timerLst = TimerLst();
+    // 线程池
+    _threadPool = new MyThreadPool<MyHttpConn>();
+    MY_LOG_INFO("初始化了线程池");
 }
 WebServer::~WebServer()
 {
@@ -63,12 +66,14 @@ WebServer::~WebServer()
     MY_LOG_INFO("释放了连接池");
     delete[] _userConnTimers;
     MY_LOG_INFO("释放了连接的定时器数组");
+    delete _threadPool;
+    MY_LOG_INFO("释放了线程池");
 }
 
 void WebServer::run()
 {
     // 标识在复用器上的定时器到期了
-    bool          timeout     = false;
+    bool timeout = false;
     // 拿到SIGTERM信号 实现优雅停机
     bool          stop_server = false;
     struct kevent events[MAX_EVENT_NUMBER];
@@ -204,7 +209,31 @@ bool WebServer::processClient()
 }
 void WebServer::processRead(uint32_t fd)
 {
-    // todo
+    Timer* timer = _userConnTimers[fd];
+    if (timer)
+    {
+        // 连接还是进行数据传输 当前肯定没有限制 刷新进行回收探测的时机
+        time_t cur = time(NULL);
+        timer->SetExpire(cur + 3 * TIMER_INTERVAL);
+        // 在链表中位置调整
+        _timerLst.Reset(timer);
+    }
+    // 将该事件放入请求队列
+    m_pool->append(users + sockfd, 0);
+
+    while (true)
+    {
+        if (1 == users[sockfd].improv)
+        {
+            if (1 == users[sockfd].timer_flag)
+            {
+                deal_timer(timer, sockfd);
+                users[sockfd].timer_flag = 0;
+            }
+            users[sockfd].improv = 0;
+            break;
+        }
+    }
 }
 void WebServer::processWrite(uint32_t fd)
 {
