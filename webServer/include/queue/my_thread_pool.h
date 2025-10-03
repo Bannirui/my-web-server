@@ -21,8 +21,8 @@ class MyThreadPool
 public:
     MyThreadPool(uint32_t thread_number = 8, uint32_t max_request = 65536);
     ~MyThreadPool();
-    bool append(T* request, int state);
-    bool append(T* request);
+    bool append(T *request, int state);
+    bool append(T *request);
 
 private:
     /**
@@ -31,15 +31,16 @@ private:
      * @param arg
      * @return
      */
-    static void* worker(void* arg);
+    static void *worker(void *arg);
     void         run();
 
 private:
-    uint32_t      m_thread_number;  // 线程池中的活跃线程数
-    uint32_t      m_max_requests;   // 请求队列中允许的最大请求数
-    pthread_t*    m_threads;        // 描述线程池的数组 其大小为m_thread_number
-    std::list<T*> m_workQueue;      // 任务队列
-    MyLock        m_queueLocker;    // 保护请求队列的互斥锁
+    uint32_t       m_thread_number;  // 线程池中的活跃线程数
+    uint32_t       m_max_requests;   // 请求队列中允许的最大请求数
+    pthread_t     *m_threads;        // 描述线程池的数组 其大小为m_thread_number
+    std::list<T *> _workerQueue;     // 任务队列
+    MyLock         _queueLock;       // 保护请求队列的互斥锁
+    MySem          _queueStat;       // 是否有任务需要处理
 };
 
 template <typename T>
@@ -71,41 +72,41 @@ MyThreadPool<T>::~MyThreadPool()
 }
 
 template <typename T>
-bool MyThreadPool<T>::append(T* request, int state)
+bool MyThreadPool<T>::append(T *request, int state)
 {
-    m_queuelocker.lock();
-    if (m_workqueue.size() >= m_max_requests)
+    _queueLock.lock();
+    if (_workerQueue.size() >= m_max_requests)
     {
-        m_queuelocker.unlock();
+        _queueLock.unlock();
         return false;
     }
-    request->m_state = state;
-    m_workqueue.push_back(request);
-    m_queuelocker.unlock();
-    m_queuestat.post();
+    request->SetState(state);
+    _workerQueue.push_back(request);
+    _queueLock.unlock();
+    _queueStat.post();
     return true;
 }
 
 template <typename T>
-bool MyThreadPool<T>::append(T* request)
+bool MyThreadPool<T>::append(T *request)
 {
-    m_queueLocker.lock();
-    if (m_workQueue.size() >= m_max_requests)
+    _queueLock.lock();
+    if (_workerQueue.size() >= m_max_requests)
     {
-        m_queueLocker.unlock();
+        _queueLock.unlock();
         return false;
     }
     // 入队
-    m_workQueue.push_back(request);
-    m_queueLocker.unlock();
-    m_queuestat.post();
+    _workerQueue.push_back(request);
+    _queueLock.unlock();
+    _queueStat.post();
     return true;
 }
 
 template <typename T>
-void* MyThreadPool<T>::worker(void* arg)
+void *MyThreadPool<T>::worker(void *arg)
 {
-    threadpool* pool = (threadpool*)arg;
+    MyThreadPool *pool = (MyThreadPool *)arg;
     pool->run();
     return pool;
 }
@@ -115,50 +116,19 @@ void MyThreadPool<T>::run()
 {
     while (true)
     {
-        m_queuestat.wait();
-        m_queuelocker.lock();
-        if (m_workqueue.empty())
+        _queueStat.wait();
+        _queueLock.lock();
+        if (_workerQueue.empty())
         {
-            m_queuelocker.unlock();
+            _queueLock.unlock();
             continue;
         }
-        T* request = m_workqueue.front();
-        m_workqueue.pop_front();
-        m_queuelocker.unlock();
+        T *request = _workerQueue.front();
+        _workerQueue.pop_front();
+        _queueLock.unlock();
         if (!request) continue;
-        if (1 == m_actor_model)
-        {
-            if (0 == request->m_state)
-            {
-                if (request->read_once())
-                {
-                    request->improv = 1;
-                    connectionRAII mysqlcon(&request->mysql, m_connPool);
-                    request->process();
-                }
-                else
-                {
-                    request->improv     = 1;
-                    request->timer_flag = 1;
-                }
-            }
-            else
-            {
-                if (request->write())
-                {
-                    request->improv = 1;
-                }
-                else
-                {
-                    request->improv     = 1;
-                    request->timer_flag = 1;
-                }
-            }
-        }
-        else
-        {
-            connectionRAII mysqlcon(&request->mysql, m_connPool);
-            request->process();
-        }
+        // 处理读写 req::_state=0是读 1是写
+        request->SetImprov(1);
+        request->SetTimerFlag(1);
     }
 }

@@ -41,7 +41,7 @@ public:
      * @param stopServer 复用器上拿到了SIGTERM 根据这个信号实现优雅停机
      * @return
      */
-    bool processSig(bool& timeout, bool& stopServer);
+    bool processSig(bool &timeout, bool &stopServer);
 
 private:
     /**
@@ -50,7 +50,7 @@ private:
      * @param msg 要发送的消息
      * @param callBack 回调函数
      */
-    void sendToSocket(uint32_t fd, const char* msg, std::function<void(uint32_t)> callBack);
+    void sendToSocket(uint32_t fd, const char *msg, std::function<void(uint32_t)> callBack);
 
 private:
     int m_port;
@@ -61,11 +61,11 @@ private:
     // 这个生产者消费者模型 系统层面是全双工模式
     int m_pipefd[2]{-1, -1};
     // 连接池 缓存着对客户端连接的封装 索引号是当前服务端accept开辟出来的socket fd
-    MyHttpConn* _userConns;
+    MyHttpConn *_userConns;
     // 管理连接池的连接 定时器释放闲置连接资源
-    Timer** _userConnTimers;
+    Timer **_userConnTimers;
     // 用链表组织定时器
     TimerLst _timerLst;
     // 线程池
-    MyThreadPool<MyHttpConn>* _threadPool;
+    MyThreadPool<MyHttpConn> *_threadPool;
 };

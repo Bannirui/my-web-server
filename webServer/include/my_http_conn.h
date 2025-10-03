@@ -27,7 +27,7 @@ public:
      * @param sockfd accept在服务端复制出来的socket 负责跟客户端socket通信
      * @param addr 客户端socket信息
      */
-    void Init(int sockfd, const sockaddr_in& addr, MyKqueue* selector);
+    void Init(int sockfd, const sockaddr_in &addr, MyKqueue *selector);
     /**
      * 服务端的连接关闭
      * 1 从复用器上移除监听
@@ -35,6 +35,12 @@ public:
      * 3 更新活跃连接计数
      */
     void Close();
+    int GetState() { return _state; }
+    void SetState(int state) { _state = state; }
+    int  GetImprov() const { return _improv; }
+    void SetImprov(int flag) { _improv = flag; }
+    int  GetTimerFlag() const { return _timerFlag; }
+    void SetTimerFlag(int timerFlag) { _timerFlag = timerFlag; }
 
 private:
     void init();
@@ -52,5 +58,11 @@ private:
     // 客户端socket的信息
     sockaddr_in _clientAddress;
     // 所有的连接都会注册到多路复用器上 关闭连接的时候也要从复用器上移除
-    MyKqueue* _selector;
+    MyKqueue *_selector;
+    // 0=读 1=写
+    int _state;
+    // 表示线程池已经受理了读写任务
+    int _improv;
+    // 已经给链接挂载了定时器受理读写请求
+    int _timerFlag;
 };

@@ -44,7 +44,7 @@ WebServer::WebServer(int port, bool optLinger, TriggerMode mode) : m_port(port),
     _userConns = new MyHttpConn[MAX_FD];
     MY_LOG_INFO("初始化了连接池");
     // 连接管理
-    _userConnTimers = new Timer*[MAX_FD];
+    _userConnTimers = new Timer *[MAX_FD];
     MY_LOG_INFO("初始化了连接的定时器数组");
     _timerLst = TimerLst();
     // 线程池
@@ -80,19 +80,21 @@ void WebServer::run()
     while (!stop_server)
     {
         // kevent等待事件
-        int number = kevent(_selector.getFd(), nullptr, 0, events, MAX_EVENT_NUMBER, nullptr);
-        if (number < 0 && errno != EINTR)
+        int cnt = kevent(_selector.getFd(), nullptr, 0, events, MAX_EVENT_NUMBER, nullptr);
+        if (cnt < 0 && errno != EINTR)
         {
             MY_LOG_ERROR("kqueue获取就绪事件失败");
             break;
         }
-        for (int i = 0; i < number; i++)
+        MY_LOG_INFO("kq获取到{}个就绪事件", cnt);
+        for (int i = 0; i < cnt; i++)
         {
             // 这个socket是服务端对应的socket
             int sockfd = static_cast<int>(events[i].ident);
             if (sockfd == this->m_listenSocket.getFd() && events[i].filter == EVFILT_READ)
             {
                 // 处理新到的客户连接
+                MY_LOG_INFO("收到的事件{}是连接请求 开始处理", sockfd);
                 if (!this->processClient())
                 {
                     continue;
@@ -101,7 +103,7 @@ void WebServer::run()
             else if (events[i].flags & EV_EOF || events[i].flags & EV_ERROR)
             {
                 // 服务器端关闭连接 移除对应的定时器
-                Timer* timer = _userConnTimers[sockfd];
+                Timer *timer = _userConnTimers[sockfd];
                 if (timer)
                 {
                     _timerLst.Del(timer);
@@ -118,11 +120,13 @@ void WebServer::run()
             else if (events[i].filter == EVFILT_READ)
             {
                 // 可读事件
+                MY_LOG_INFO("收到的事件{}是可读事件 开始处理", sockfd);
                 processRead(sockfd);
             }
             else if (events[i].filter == EVFILT_WRITE)
             {
                 // 可写事件
+                MY_LOG_INFO("收到的事件{}是可写事件 开始处理", sockfd);
                 processWrite(sockfd);
             }
         }
@@ -141,7 +145,7 @@ bool WebServer::processClient()
     if (this->_selector.LT_Mode())
     {
         // 水平触发
-        int connfd = accept(this->m_listenSocket.getFd(), (struct sockaddr*)&client_address, &client_addrlength);
+        int connfd = accept(this->m_listenSocket.getFd(), (struct sockaddr *)&client_address, &client_addrlength);
         if (connfd < 0)
         {
             MY_LOG_ERROR("获取客户端连接 拿到的socket是{}异常", connfd);
@@ -166,7 +170,7 @@ bool WebServer::processClient()
         _userConns[connfd].Init(connfd, client_address, &this->_selector);
         // 连接托管给定时器
         time_t cur              = time(NULL);
-        Timer* timer            = new Timer(cur + 3 * TIMER_INTERVAL, &_userConns[connfd]);
+        Timer *timer            = new Timer(cur + 3 * TIMER_INTERVAL, &_userConns[connfd]);
         _userConnTimers[connfd] = timer;
     }
     else
@@ -174,7 +178,7 @@ bool WebServer::processClient()
         // 边缘触发
         while (1)
         {
-            int connfd = accept(this->m_listenSocket.getFd(), (struct sockaddr*)&client_address, &client_addrlength);
+            int connfd = accept(this->m_listenSocket.getFd(), (struct sockaddr *)&client_address, &client_addrlength);
             if (connfd < 0)
             {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) break;  // 已经没有可接收的连接
@@ -200,7 +204,7 @@ bool WebServer::processClient()
             _userConns[connfd].Init(connfd, client_address, &this->_selector);
             // 连接托管给定时器
             time_t cur              = time(NULL);
-            Timer* timer            = new Timer(cur + 3 * TIMER_INTERVAL, &_userConns[connfd]);
+            Timer *timer            = new Timer(cur + 3 * TIMER_INTERVAL, &_userConns[connfd]);
             _userConnTimers[connfd] = timer;
         }
         return false;
@@ -209,28 +213,32 @@ bool WebServer::processClient()
 }
 void WebServer::processRead(uint32_t fd)
 {
-    Timer* timer = _userConnTimers[fd];
-    if (timer)
+    Timer *timer = _userConnTimers[fd];
+    if (!timer)
     {
-        // 连接还是进行数据传输 当前肯定没有限制 刷新进行回收探测的时机
-        time_t cur = time(NULL);
-        timer->SetExpire(cur + 3 * TIMER_INTERVAL);
-        // 在链表中位置调整
-        _timerLst.Reset(timer);
+        MY_LOG_INFO("请求{}对应的timer为空", fd);
+        return;
     }
+    MY_LOG_INFO("可读事件{}对应的timer", fd);
+    // 连接还是进行数据传输 当前肯定没有限制 刷新进行回收探测的时机
+    time_t cur = time(NULL);
+    timer->SetExpire(cur + 3 * TIMER_INTERVAL);
+    // 在链表中位置调整
+    _timerLst.Reset(timer);
     // 将该事件放入请求队列
-    m_pool->append(users + sockfd, 0);
+    _threadPool->append(_userConns + fd, 0);
 
     while (true)
     {
-        if (1 == users[sockfd].improv)
+        if (1 == _userConns[fd].GetImprov())
         {
-            if (1 == users[sockfd].timer_flag)
+            if (1 == _userConns[fd].GetTimerFlag())
             {
-                deal_timer(timer, sockfd);
-                users[sockfd].timer_flag = 0;
+                timer->Delete();
+                _timerLst.Del(timer);
+                _userConns[fd].SetTimerFlag(0);
             }
-            users[sockfd].improv = 0;
+            _userConns[fd].SetImprov(0);
             break;
         }
     }
@@ -239,7 +247,7 @@ void WebServer::processWrite(uint32_t fd)
 {
     // todo
 }
-bool WebServer::processSig(bool& timeout, bool& stopServer)
+bool WebServer::processSig(bool &timeout, bool &stopServer)
 {
     int  ret = 0;
     char signals[1024];
@@ -268,7 +276,7 @@ bool WebServer::processSig(bool& timeout, bool& stopServer)
     }
     return true;
 }
-void WebServer::sendToSocket(uint32_t fd, const char* msg, std::function<void(uint32_t)> callBack)
+void WebServer::sendToSocket(uint32_t fd, const char *msg, std::function<void(uint32_t)> callBack)
 {
     send(fd, msg, strlen(msg), 0);
     if (callBack)

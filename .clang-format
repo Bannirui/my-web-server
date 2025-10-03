@@ -12,8 +12,8 @@ AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: true
 # 大括号换行风格
 BreakBeforeBraces: Allman
-# int* ptr而不是int *ptr
-PointerAlignment: Left
+# left=int* ptr and right=int *ptr
+PointerAlignment: Right
 SpacesInAngles: false
 SpaceBeforeParens: ControlStatements
 # 命名空间内缩进
