@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cd out ; ./my-web-server
+cd out ; ./bin/tests

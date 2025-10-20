@@ -2,7 +2,7 @@
 // Created by rui ding on 2025/9/12.
 //
 
-#include "log/log.h"
+#include "log.h"
 
 std::shared_ptr<spdlog::logger> MyLog::logger;
 

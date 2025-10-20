@@ -6,7 +6,7 @@
 
 int main()
 {
-    WebServer server(9527, true);
+    WebServer server;
     server.run();
     return 0;
 }
