@@ -1,20 +1,18 @@
 //
 // Created by rui ding on 2025/9/11.
 //
-
-
 #include "web_server.h"
 #include "log.h"
 
-WebServer::WebServer()
+my_ws::WebServer::WebServer()
 {
 }
 
-WebServer::~WebServer()
+my_ws::WebServer::~WebServer()
 {
 }
 
-void WebServer::run()
+void my_ws::WebServer::run()
 {
-    MY_LOG_INFO("Hello world");
+    my_ws::LOG_INFO("Hello world");
 }

@@ -6,11 +6,12 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks-inl.h>
+namespace my_ws {
 
-#define MY_LOG_INFO(...) MyLog::GetLogger()->info(__VA_ARGS__)
-#define MY_LOG_ERROR(...) MyLog::GetLogger()->error(__VA_ARGS__)
+#define LOG_INFO(...) Log::GetLogger()->info(__VA_ARGS__)
+#define LOG_ERROR(...) Log::GetLogger()->error(__VA_ARGS__)
 
-class MyLog
+class Log
 {
 public:
     static void                                   Init();
@@ -30,3 +31,4 @@ public:
 private:
     static std::shared_ptr<spdlog::logger> logger;
 };
+}

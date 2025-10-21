@@ -6,7 +6,7 @@
 
 int main()
 {
-    WebServer server;
+    my_ws::WebServer server;
     server.run();
     return 0;
 }

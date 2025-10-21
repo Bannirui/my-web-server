@@ -4,9 +4,9 @@
 
 #include "log.h"
 
-std::shared_ptr<spdlog::logger> MyLog::logger;
+std::shared_ptr<spdlog::logger> my_ws::Log::logger;
 
-void MyLog::Init()
+void my_ws::Log::Init()
 {
     spdlog::set_pattern("%^[%T] %n: %v%$");
     logger = spdlog::stdout_color_mt("MyWebServer");
