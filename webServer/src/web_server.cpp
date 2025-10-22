@@ -3,6 +3,7 @@
 //
 #include "web_server.h"
 #include "log.h"
+#include "event_loop.h"
 
 my_ws::WebServer::WebServer()
 {
@@ -15,4 +16,6 @@ my_ws::WebServer::~WebServer()
 void my_ws::WebServer::run()
 {
     my_ws::LOG_INFO("Hello world");
+    EventLoop ev;
+    ev.Run();
 }
