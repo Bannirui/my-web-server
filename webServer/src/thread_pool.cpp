@@ -12,8 +12,8 @@ my_ws::ThreadPool::ThreadPool(size_t n) : _stop(false)
                     std::function<void()> job;
                     {
                         std::unique_lock<std::mutex> lk(_mutex);
-                        _condition.wait(lk, [this]() { return _stop || !_workers.empty(); });
-                        if (_stop && _workers.empty())
+                        _condition.wait(lk, [this]() { return _stop || !_queue.empty(); });
+                        if (_stop && _queue.empty())
                         {
                             return;
                         }

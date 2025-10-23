@@ -40,6 +40,7 @@ void my_ws::EventLoop::Run()
             perror("epoll_wait");
             break;
         }
+        LOG_INFO("selector got {} ready events", n);
         for (int i = 0; i < n; ++i)
         {
             int      fd     = evs[i].data.fd;
@@ -54,7 +55,7 @@ void my_ws::EventLoop::Run()
                     }
                     catch (std::exception &ex)
                     {
-                        std::cerr << "handler exception: " << ex.what() << "\n";
+                        LOG_ERROR("handler exception: {}", ex.what());
                     }
                     break;
                 }
@@ -70,6 +71,7 @@ void my_ws::EventLoop::Stop()
 
 void my_ws::EventLoop::AddFd(int fd, u_int32_t events, FdCallback cb)
 {
+    LOG_INFO("add fd {} to event loop", fd);
     epoll_event ev;
     ev.events  = events;
     ev.data.fd = fd;

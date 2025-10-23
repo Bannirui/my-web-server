@@ -42,6 +42,7 @@ namespace my_ws
             u_int32_t  events;
             FdCallback cb;
         };
+        // todo key=fd val=handler
         std::vector<Entry> _handlers;
     };
 }  // namespace my_ws

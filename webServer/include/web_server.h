@@ -3,12 +3,19 @@
 //
 #pragma once
 
-namespace my_ws {
-class WebServer
+#include "event_loop.h"
+#include "socket.h"
+#include "thread_pool.h"
+
+namespace my_ws
 {
-public:
-    WebServer();
-    ~WebServer();
-    void run();
-};
-}
+    class WebServer
+    {
+    public:
+        WebServer();
+        ~WebServer();
+        void run();
+
+    private:
+    };
+}  // namespace my_ws
