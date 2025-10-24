@@ -47,21 +47,19 @@ void my_ws::EventLoop::Run()
         {
             int      fd     = evs[i].data.fd;
             uint32_t events = evs[i].events;
-            for (auto &h : _handlers)
+            auto     it     = _handlers.find(fd);
+            if (it != _handlers.end())
             {
-                if (h.fd == fd)
+                LOG_INFO("find {} for ready event", fd);
+                try
                 {
-                    LOG_INFO("find {} for ready event", h.fd);
-                    try
-                    {
-                        h.cb(events);
-                    }
-                    catch (std::exception &ex)
-                    {
-                        LOG_ERROR("handler exception: {}", ex.what());
-                    }
-                    break;
+                    it->second.cb(events);
                 }
+                catch (std::exception &ex)
+                {
+                    LOG_ERROR("handler exception: {}", ex.what());
+                }
+                break;
             }
         }
     }
@@ -74,8 +72,7 @@ void my_ws::EventLoop::Stop()
 
 void my_ws::EventLoop::AddFd(int fd, u_int32_t events, FdCallback cb)
 {
-    LOG_INFO("add fd {} to event loop", fd);
-    epoll_event ev;
+    epoll_event ev{};
     ev.events  = events;
     ev.data.fd = fd;
     if (epoll_ctl(_selectorId, EPOLL_CTL_ADD, fd, &ev) < 0)
@@ -83,7 +80,8 @@ void my_ws::EventLoop::AddFd(int fd, u_int32_t events, FdCallback cb)
         LOG_ERROR("add fd {} to event loop failed, {}", fd, strerror(errno));
         throw std::runtime_error("epoll_ctl");
     }
-    _handlers.push_back({fd, events, cb});
+    _handlers.emplace(fd, Entry{fd, events, std::move(cb)});
+    LOG_INFO("add fd {} to event loop", fd);
 }
 
 void my_ws::EventLoop::ModifyFd(int fd, u_int32_t events)
@@ -95,18 +93,16 @@ void my_ws::EventLoop::ModifyFd(int fd, u_int32_t events)
     {
         throw std::runtime_error("epoll_ctl");
     }
-    for (auto &e : _handlers)
+    auto it = _handlers.find(fd);
+    if (it != _handlers.end())
     {
-        if (e.fd == fd)
-        {
-            e.events = events;
-        }
+        it->second.events = events;
     }
 }
 
 void my_ws::EventLoop::DelFd(int fd)
 {
     epoll_ctl(_selectorId, EPOLL_CTL_DEL, fd, NULL);
-    _handlers.erase(std::remove_if(_handlers.begin(), _handlers.end(), [fd](const Entry &e) { return e.fd == fd; }),
-                    _handlers.end());
+    _handlers.erase(fd);
+    LOG_INFO("delete fd {} from event loop", fd);
 }
