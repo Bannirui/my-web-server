@@ -13,6 +13,7 @@ my_ws::EventLoop::EventLoop()
     {
         throw std::runtime_error("epoll_create1");
     }
+    LOG_INFO("selector created, fd={}", _selectorId);
 }
 
 my_ws::EventLoop::~EventLoop()
@@ -30,6 +31,7 @@ void my_ws::EventLoop::Run()
     _running = true;
     while (_running)
     {
+        // fix timeout
         int n = epoll_wait(_selectorId, evs.data(), MAXE, -1);
         if (n < 0)
         {
@@ -49,6 +51,7 @@ void my_ws::EventLoop::Run()
             {
                 if (h.fd == fd)
                 {
+                    LOG_INFO("find {} for ready event", h.fd);
                     try
                     {
                         h.cb(events);
@@ -77,6 +80,7 @@ void my_ws::EventLoop::AddFd(int fd, u_int32_t events, FdCallback cb)
     ev.data.fd = fd;
     if (epoll_ctl(_selectorId, EPOLL_CTL_ADD, fd, &ev) < 0)
     {
+        LOG_ERROR("add fd {} to event loop failed, {}", fd, strerror(errno));
         throw std::runtime_error("epoll_ctl");
     }
     _handlers.push_back({fd, events, cb});

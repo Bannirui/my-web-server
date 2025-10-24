@@ -1,6 +1,8 @@
 //
 // Created by dingrui on 2025/10/22.
 //
+#pragma once
+
 #include <string>
 
 namespace my_ws

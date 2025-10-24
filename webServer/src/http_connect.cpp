@@ -6,7 +6,11 @@
 #include <sys/syslog.h>
 
 #include "http_connect.h"
+
+#include "event_loop.h"
 #include "log.h"
+
+#include <sys/epoll.h>
 
 my_ws::HttpConnect::HttpConnect(int fd, EventLoop &loop) : _fd(fd), _eventLoop(loop) {}
 
@@ -51,9 +55,8 @@ void my_ws::HttpConnect::OnRead()
     // respond if have sth
     if (!_in.empty())
     {
+        LOG_INFO("{} get {}", Fd(), _in);
         _out = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World";
-        // todo response
-        OnWrite();
     }
 }
 
@@ -61,6 +64,7 @@ void my_ws::HttpConnect::OnWrite()
 {
     while (!_out.empty())
     {
+        LOG_INFO("ready send msg to client, {}", _out);
         ssize_t n = write(_fd, _out.data(), _out.size());
         if (n > 0)
         {
@@ -78,6 +82,8 @@ void my_ws::HttpConnect::OnWrite()
             return;
         }
     }
+    // finish sending, disable EPOLLOUT
+    _eventLoop.ModifyFd(_fd, EPOLLIN | EPOLLET);
 }
 
 int my_ws::HttpConnect::Fd() const

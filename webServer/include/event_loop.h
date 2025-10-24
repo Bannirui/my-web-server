@@ -18,7 +18,10 @@ namespace my_ws
         EventLoop();
         ~EventLoop();
 
-        using FdCallback = std::function<void(u_int32_t)>;
+        /**
+         * events the events type wanna be watched
+         */
+        using FdCallback = std::function<void(uint32_t events)>;
 
         void Run();
         void Stop();

@@ -7,6 +7,6 @@
 int main()
 {
     my_ws::WebServer server;
-    server.run();
+    server.Run();
     return 0;
 }

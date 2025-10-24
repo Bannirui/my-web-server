@@ -1,79 +1,71 @@
 //
 // Created by rui ding on 2025/9/11.
 //
-#include <sys/epoll.h>
-
 #include "web_server.h"
-#include "log.h"
-#include "event_loop.h"
-#include "http_connect.h"
 
+#include <sys/epoll.h>
 #include <fcntl.h>
 
-my_ws::WebServer::WebServer() {}
+#include "log.h"
+#include "event_loop.h"
 
-my_ws::WebServer::~WebServer() {}
+#include <unistd.h>
 
-void my_ws::WebServer::run()
+my_ws::WebServer::WebServer(uint16_t port)
+    : _listenSock(Socket::ListenTcp(port)),
+      _eventLoop(std::make_unique<EventLoop>()),
+      _threadPool(THREAD_POOL_THREADS),
+      _connPool(std::make_unique<ConnectionPool>(*_eventLoop))
+{
+    _listenSock.SetNonBlocking(true);
+}
+
+my_ws::WebServer::~WebServer() = default;
+
+void my_ws::WebServer::Run()
 {
     try
     {
-        Socket     listenSock = Socket::ListenTcp(9527);
-        EventLoop  loop;
-        ThreadPool pool(4);
-
-        std::unordered_map<int, std::unique_ptr<HttpConnect>> conns;
-
-        // accept handler
-        loop.AddFd(listenSock.Fd(), EPOLLIN,
-                   [&](uint32_t ev)
-                   {
-                       while (true)
-                       {
-                           sockaddr_in cli{};
-                           int         serverSock = Socket::AcceptTcp(listenSock.Fd(), cli);
-                           if (serverSock < 0)
-                           {
-                               if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-                               perror("accept");
-                               break;
-                           }
-                           // set non-blocking
-                           int flags = fcntl(serverSock, F_GETFL, 0);
-                           fcntl(serverSock, F_SETFL, flags | O_NONBLOCK);
-                           // create connection object
-                           conns[serverSock] = std::make_unique<HttpConnect>(serverSock, loop);
-                           // register fd
-                           loop.AddFd(serverSock, EPOLLIN | EPOLLET,
-                                      [&, serverSock](uint32_t ev)
-                                      {
-                                          if (ev & EPOLLIN)
-                                          {
-                                              if (conns[serverSock])
-                                              {
-                                                  conns[serverSock]->OnRead();
-                                              }
-                                          }
-                                          if (ev & EPOLLOUT)
-                                          {
-                                              if (conns[serverSock])
-                                              {
-                                                  conns[serverSock]->OnWrite();
-                                              }
-                                          }
-                                          if (ev & (EPOLLHUP | EPOLLERR))
-                                          {
-                                              conns.erase(serverSock);
-                                          }
-                                      });
-                       }
-                   });
-
-        LOG_INFO("start event loop");
-        loop.Run();
+        // register accept handler
+        _eventLoop->AddFd(_listenSock.Fd(), EPOLLIN, [this](uint32_t evs) { onAccept(); });
+        // start connection pool timer(for cleanup)
+        _connPool->StartTimer();
+        LOG_INFO("event loop start");
+        _eventLoop->Run();
     }
     catch (std::exception &ex)
     {
         LOG_ERROR("err: {}", ex.what());
+    }
+}
+
+void my_ws::WebServer::onAccept()
+{
+    while (true)
+    {
+        sockaddr_in cli{};
+        int         serverSock = Socket::AcceptTcp(_listenSock.Fd(), cli);
+        if (serverSock < 0)
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) break;
+            LOG_ERROR("accept error: {}", strerror(errno));
+            break;
+        }
+        // set non-blocking
+        int flags = fcntl(serverSock, F_GETFL, 0);
+        if (flags == -1)
+        {
+            LOG_ERROR("fcntl failed: {}", strerror(errno));
+            close(serverSock);
+            continue;
+        }
+        if (fcntl(serverSock, F_SETFL, flags | O_NONBLOCK) == -1)
+        {
+            LOG_ERROR("fcntl failed: {}", strerror(errno));
+            close(serverSock);
+            continue;
+        }
+        // add to connection pool
+        _connPool->Add(serverSock);
     }
 }
