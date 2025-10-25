@@ -4,7 +4,7 @@ my_ws::ThreadPool::ThreadPool(size_t n) : _stop(false)
 {
     for (size_t i = 0; i < n; ++i)
     {
-        _workers.emplace_back(
+        _threads.emplace_back(
             [this]()
             {
                 while (true)
@@ -12,13 +12,13 @@ my_ws::ThreadPool::ThreadPool(size_t n) : _stop(false)
                     std::function<void()> job;
                     {
                         std::unique_lock<std::mutex> lk(_mutex);
-                        _condition.wait(lk, [this]() { return _stop || !_queue.empty(); });
-                        if (_stop && _queue.empty())
+                        _condition.wait(lk, [this]() { return _stop || !_tasks.empty(); });
+                        if (_stop && _tasks.empty())
                         {
                             return;
                         }
-                        job = std::move(_queue.front());
-                        _queue.pop();
+                        job = std::move(_tasks.front());
+                        _tasks.pop();
                     }
                     try
                     {
@@ -39,7 +39,7 @@ my_ws::ThreadPool::~ThreadPool()
         _stop = true;
     }
     _condition.notify_all();
-    for (auto &t : _workers)
+    for (auto &t : _threads)
     {
         if (t.joinable())
         {
@@ -48,11 +48,11 @@ my_ws::ThreadPool::~ThreadPool()
     }
 }
 
-void my_ws::ThreadPool::Submit(std::function<void()> job)
+void my_ws::ThreadPool::Submit(std::function<void()> task)
 {
     {
         std::unique_lock<std::mutex> lk(_mutex);
-        _queue.push(std::move(job));
+        _tasks.push(std::move(task));
     }
     _condition.notify_one();
 }
