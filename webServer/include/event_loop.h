@@ -1,7 +1,7 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
-#include <vector>
 
 namespace my_ws
 {
@@ -23,7 +23,7 @@ namespace my_ws
         struct Entry
         {
             int        fd;
-            u_int32_t  events;
+            uint32_t  events;
             FdCallback cb;
         };
 
@@ -39,8 +39,8 @@ namespace my_ws
          * @param events what actually watching for
          * @param cb callback if fd ready for events
          */
-        void AddFd(int fd, u_int32_t events, FdCallback cb);
-        void ModifyFd(int fd, u_int32_t events);
+        void AddFd(int fd, uint32_t events, FdCallback cb);
+        void ModifyFd(int fd, uint32_t events);
         void DelFd(int fd);
 
     private:
