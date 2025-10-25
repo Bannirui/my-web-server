@@ -65,7 +65,7 @@ my_ws::Socket my_ws::Socket::ListenTcp(int port, int backlog)
 int my_ws::Socket::AcceptTcp(int listenFd, sockaddr_in &outAddr)
 {
     socklen_t addrLen = sizeof(outAddr);
-    int       c       = accept(listenFd, (sockaddr *)&outAddr, &addrLen);
+    int       c       = accept(listenFd, (struct sockaddr *)&outAddr, &addrLen);
     return c;
 }
 

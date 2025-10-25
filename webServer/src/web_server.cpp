@@ -39,7 +39,7 @@ void my_ws::WebServer::Run()
     }
 }
 
-void my_ws::WebServer::onAccept()
+void my_ws::WebServer::onAccept() const
 {
     while (true)
     {
@@ -66,6 +66,12 @@ void my_ws::WebServer::onAccept()
             continue;
         }
         // add to connection pool
+        if (_connPool->GetConnMaxCnt() >= _connPool->GetCurConnCnt())
+        {
+            // todo send msg to client, notify it
+            LOG_INFO("thread pool is full, wait a minute");
+            break;
+        }
         _connPool->Add(serverSock);
     }
 }

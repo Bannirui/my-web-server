@@ -10,8 +10,8 @@
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 
-my_ws::ConnectionPool::ConnectionPool(EventLoop &eventLoop, int idleTimeoutSec)
-    : _eventLoop(eventLoop), _idleTimeoutSec(idleTimeoutSec)
+my_ws::ConnectionPool::ConnectionPool(EventLoop &eventLoop, int maxSz, int idleTimeoutSec)
+    : _eventLoop(eventLoop), _idleTimeoutSec(idleTimeoutSec), _connMaxCnt(maxSz)
 {
 }
 
@@ -32,12 +32,11 @@ my_ws::ConnectionPool::~ConnectionPool()
 
 void my_ws::ConnectionPool::Add(int fd)
 {
-    auto     conn = std::make_unique<HttpConnect>(fd, _eventLoop);
-    ConnInfo connInfo;
-    connInfo.conn       = std::move(conn);
-    connInfo.lastActive = std::chrono::steady_clock::now();
+    auto conn = std::make_unique<HttpConnect>(fd, _eventLoop);
+    auto now  = std::chrono::steady_clock::now();
+    auto iter = _connsAscByActiveTime.emplace(now, fd);
     // cache
-    _conns.emplace(fd, std::move(connInfo));
+    _conns.emplace(fd, ConnInfo{std::move(conn), now, iter});
     // register to selector
     _eventLoop.AddFd(fd, EPOLLIN | EPOLLET,
                      [this, fd](uint32_t ev)
@@ -88,15 +87,19 @@ void my_ws::ConnectionPool::Remove(int fd)
     }
     _eventLoop.DelFd(fd);
     _conns.erase(it);
+    _connsAscByActiveTime.erase(it->second.byActiveIter);
     LOG_INFO("remove connection fd={} from pool", fd);
 }
 
 void my_ws::ConnectionPool::RefreshActive(int fd)
 {
-    auto it = _conns.find(fd);
+    auto now = std::chrono::steady_clock::now();
+    auto it  = _conns.find(fd);
     if (it != _conns.end())
     {
-        it->second.lastActive = std::chrono::steady_clock::now();
+        _connsAscByActiveTime.erase(it->second.byActiveIter);
+        it->second.lastActive   = now;
+        it->second.byActiveIter = _connsAscByActiveTime.emplace(now, fd);
     }
 }
 
@@ -114,29 +117,23 @@ void my_ws::ConnectionPool::StartTimer()
     spec.it_interval.tv_sec = _idleTimeoutSec;
     timerfd_settime(_timerFd, 0, &spec, nullptr);
     _eventLoop.AddFd(_timerFd, EPOLLIN,
-                     [this](uint32_t)
+                     [this](uint32_t events)
                      {
-                         uint64_t expire;
-                         read(_timerFd, &expire, sizeof(expire));
+                         (void)events;
                          closeIdleConns();
                      });
 }
 
 void my_ws::ConnectionPool::closeIdleConns()
 {
-    auto now = std::chrono::steady_clock::now();
-    for (auto it = _conns.begin(); it != _conns.end();)
+    auto now        = std::chrono::steady_clock::now();
+    auto expireTime = now - std::chrono::seconds(_idleTimeoutSec);
+    for (auto it = _connsAscByActiveTime.begin(); it != _connsAscByActiveTime.end();)
     {
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - it->second.lastActive).count();
-        if (elapsed > _idleTimeoutSec)
-        {
-            int fd = it->first;
-            LOG_INFO("closing the idle connection: {}", fd);
-            it = _conns.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
+        if (it->first > expireTime) break;  // the earliest is not expired, all later ones are active enough
+        int fd = it->second;
+        LOG_INFO("Closing idle connection {}", fd);
+        it = _connsAscByActiveTime.erase(it);  // advance safety
+        _conns.erase(fd);
     }
 }

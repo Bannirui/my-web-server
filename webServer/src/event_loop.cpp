@@ -26,7 +26,7 @@ my_ws::EventLoop::~EventLoop()
 
 void my_ws::EventLoop::Run()
 {
-    const int                MAXE = 64;
+    const int                MAXE = 1024;
     std::vector<epoll_event> evs(MAXE);
     _running = true;
     while (_running)
@@ -72,6 +72,7 @@ void my_ws::EventLoop::Stop()
 
 void my_ws::EventLoop::AddFd(int fd, u_int32_t events, FdCallback cb)
 {
+    _handlers.emplace(fd, Entry{fd, events, std::move(cb)});
     epoll_event ev{};
     ev.events  = events;
     ev.data.fd = fd;
@@ -80,7 +81,6 @@ void my_ws::EventLoop::AddFd(int fd, u_int32_t events, FdCallback cb)
         LOG_ERROR("add fd {} to event loop failed, {}", fd, strerror(errno));
         throw std::runtime_error("epoll_ctl");
     }
-    _handlers.emplace(fd, Entry{fd, events, std::move(cb)});
     LOG_INFO("add fd {} to event loop", fd);
 }
 

@@ -25,7 +25,7 @@ namespace my_ws
         /**
          * server socket is registered to selector, some client connect, and selector works
          */
-        void onAccept();
+        void onAccept() const;
 
     private:
         Socket                          _listenSock;
