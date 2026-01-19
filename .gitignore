@@ -45,3 +45,6 @@
 [Oo][Uu][Tt]
 
 .clangd
+
+build-**
+cmake-build-**

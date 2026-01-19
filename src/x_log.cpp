@@ -2,11 +2,11 @@
 // Created by rui ding on 2025/9/12.
 //
 
-#include "log.h"
+#include "x_log.h"
 
-std::shared_ptr<spdlog::logger> my_ws::Log::logger;
+std::shared_ptr<spdlog::logger> XLog::logger;
 
-void my_ws::Log::Init()
+void XLog::Init()
 {
     spdlog::set_pattern("%^[%T] %n: %v%$");
     logger = spdlog::stdout_color_mt("MyWebServer");
