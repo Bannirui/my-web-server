@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 {
     XLog::Init();
 
-    uint16_t port = 9528;
+    uint16_t port = 9527;
     if (argc > 1)
     {
         port = atoi(argv[1]);

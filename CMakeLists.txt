@@ -48,7 +48,6 @@ set(LIB_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 include(${LIB_DIRECTORY}/spdlog.cmake)
 
 set(LIB_NAME "my-web-server-core")
-set(APP_NAME "my-web-server")
 
 include(CTest)
 enable_testing()

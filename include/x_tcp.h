@@ -28,7 +28,8 @@ public:
      * @param len the bytes of buf, including 1 \0 space for c-string, the the buf="ok\n", len=4
      * @return send bytes actually
      */
-    int Send(const char *buf, int len);
+    int  Send(const char *buf, int len);
+    bool Connect(const std::string ip, uint16_t port);
 
     uint32_t    get_sock() const { return this->m_sock; }
     uint16_t    get_port() const { return this->m_port; }

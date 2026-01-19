@@ -90,3 +90,22 @@ int XTcp::Send(const char *buf, int len)
     }
     return cnt;
 }
+
+bool XTcp::Connect(const std::string ip, uint16_t port)
+{
+    if (this->m_sock <= 0)
+    {
+        this->CreateSocket();
+    }
+    sockaddr_in s_addr;
+    s_addr.sin_family      = AF_INET;
+    s_addr.sin_addr.s_addr = inet_addr(ip.c_str());
+    s_addr.sin_port        = htons(port);
+    if (::connect(this->m_sock, (sockaddr *)&s_addr, sizeof(s_addr)) != 0)
+    {
+        XLOG_ERROR("{} connect to {}:{} failed, err={}", this->m_sock, ip, port, strerror(errno));
+        return false;
+    }
+    XLOG_INFO("{} connect to {}:{} success", this->m_sock, ip, port);
+    return true;
+}
