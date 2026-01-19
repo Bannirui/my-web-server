@@ -7,14 +7,15 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks-inl.h>
 
-#define XLOG_INFO(...) XLog::GetLogger()->info(__VA_ARGS__)
-#define XLOG_ERROR(...) XLog::GetLogger()->error(__VA_ARGS__)
+#define XLOG_INFO(...) XLog::get_logger()->info(__VA_ARGS__)
+#define XLOG_WARN(...) XLog::get_logger()->warn(__VA_ARGS__)
+#define XLOG_ERROR(...) XLog::get_logger()->error(__VA_ARGS__)
 
 class XLog
 {
 public:
     static void                                   Init();
-    inline static std::shared_ptr<spdlog::logger> GetLogger()
+    inline static std::shared_ptr<spdlog::logger> get_logger()
     {
         if (!logger)
         {
