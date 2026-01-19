@@ -9,15 +9,18 @@
 
 #include "x_log.h"
 
+#include <arpa/inet.h>
+
 #define BACK_LOG_SZ 10
 
 int XTcp::CreateSocket()
 {
-    this->m_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (this->m_sock == -1)
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1)
     {
         XLOG_ERROR("create socket failed");
     }
+    this->m_sock = sock;
     return this->m_sock;
 }
 
@@ -35,4 +38,31 @@ bool XTcp::Bind(uint16_t port)
     XLOG_INFO("{} bind to {} success", this->m_sock, port);
     listen(this->m_sock, BACK_LOG_SZ);
     return true;
+}
+
+XTcp XTcp::Accept()
+{
+    XTcp        ret;
+    sockaddr_in client_addr;
+    socklen_t   client_addr_len = sizeof(client_addr);
+    int         client_sock     = accept(this->m_sock, (sockaddr *)&client_addr, &client_addr_len);
+    if (client_sock <= 0)
+    {
+        return ret;
+    }
+    ret.m_sock = client_sock;
+    ret.m_ip   = inet_ntoa(client_addr.sin_addr);
+    ret.m_port = ntohs(client_addr.sin_port);
+    XLOG_INFO("server accept client, client ip={} port={}, assign socket {} for communication", ret.m_ip, ret.m_port,
+              ret.m_sock);
+    return ret;
+}
+
+void XTcp::Close()
+{
+    if (this->m_sock <= 0)
+    {
+        return;
+    }
+    close(this->m_sock);
 }
