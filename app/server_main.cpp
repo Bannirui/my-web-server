@@ -16,7 +16,7 @@ public:
 
     void Main()
     {
-        char buf[1024];
+        char buf[1024] = {0};
         for (;;)
         {
             int recv_len = this->m_client.Recv(buf, sizeof(buf) - 1);
@@ -25,7 +25,7 @@ public:
                 break;
             }
             buf[recv_len] = '\0';
-            XLOG_INFO("recv {} bytes, {}", recv_len, std::string(buf, recv_len - 1));
+            XLOG_INFO("recv {} bytes: {}", recv_len, std::string(buf, recv_len - 1));
             if (strstr(buf, "quit") != nullptr)
             {
                 char re[] = "quit success\n";

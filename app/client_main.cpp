@@ -11,6 +11,10 @@ int main(int argc, char *argv[])
 
     XTcp client;
     client.Connect("127.0.0.1", 9527);
-
+    client.Send("client", 7);
+    char buf[1024] = {0};
+    int  recv_len  = client.Recv(buf, sizeof(buf) - 1);
+    XLOG_INFO("recv: {}", std::string(buf, recv_len - 1));
+    client.Close();
     return 0;
 }
