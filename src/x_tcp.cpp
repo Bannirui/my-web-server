@@ -26,6 +26,10 @@ int XTcp::CreateSocket()
 
 bool XTcp::Bind(uint16_t port)
 {
+    if (this->m_sock <= 0)
+    {
+        this->CreateSocket();
+    }
     sockaddr_in s_addr;
     s_addr.sin_family      = AF_INET;
     s_addr.sin_port        = htons(port);
@@ -65,4 +69,24 @@ void XTcp::Close()
         return;
     }
     close(this->m_sock);
+}
+
+int XTcp::Recv(char *buf, int len)
+{
+    return recv(this->m_sock, buf, len, 0);
+}
+
+int XTcp::Send(const char *buf, int len)
+{
+    int cnt = 0;
+    while (cnt != len)
+    {
+        int send_len = send(this->m_sock, buf + cnt, len - cnt, 0);
+        if (send_len <= 0)
+        {
+            break;
+        }
+        cnt += send_len;
+    }
+    return cnt;
 }
