@@ -36,7 +36,8 @@ public:
      */
     bool SetBlock(bool block = false);
 
-    uint32_t    get_sock() const { return this->m_sock; }
+    int         get_sock() const { return this->m_sock; }
+    void        set_sock(int sock_fd) { this->m_sock = sock_fd; }
     uint16_t    get_port() const { return this->m_port; }
     std::string get_ip() const { return this->m_ip; }
 
