@@ -30,6 +30,11 @@ public:
      */
     int  Send(const char *buf, int len);
     bool Connect(const std::string ip, uint16_t port);
+    /**
+     * set socket non-blocked
+     * @param block true determines non-blocking
+     */
+    bool SetBlock(bool block = false);
 
     uint32_t    get_sock() const { return this->m_sock; }
     uint16_t    get_port() const { return this->m_port; }

@@ -10,6 +10,8 @@ int main(int argc, char *argv[])
     XLog::Init();
 
     XTcp client;
+    client.CreateSocket();
+    client.SetBlock(false);
     client.Connect("127.0.0.1", 9527);
     client.Send("client", 7);
     char buf[1024] = {0};

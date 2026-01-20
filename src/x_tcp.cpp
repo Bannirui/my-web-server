@@ -6,10 +6,10 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <fcntl.h>
+#include <arpa/inet.h>
 
 #include "x_log.h"
-
-#include <arpa/inet.h>
 
 #define BACK_LOG_SZ 10
 
@@ -107,5 +107,30 @@ bool XTcp::Connect(const std::string ip, uint16_t port)
         return false;
     }
     XLOG_INFO("{} connect to {}:{} success", this->m_sock, ip, port);
+    return true;
+}
+bool XTcp::SetBlock(bool block)
+{
+    if (this->m_sock <= 0)
+    {
+        return false;
+    }
+    int flag = fcntl(this->m_sock, F_GETFL, 0);
+    if (flag < 0)
+    {
+        return false;
+    }
+    if (block)
+    {
+        flag &= ~O_NONBLOCK;
+    }
+    else
+    {
+        flag |= O_NONBLOCK;
+    }
+    if (fcntl(this->m_sock, F_SETFL, flag) != 0)
+    {
+        return false;
+    }
     return true;
 }
