@@ -25,7 +25,7 @@ public:
     /**
      *
      * @param buf
-     * @param len the bytes of buf, including 1 \0 space for c-string, the the buf="ok\n", len=4
+     * @param len the bytes of buf, including 1 \0 space for c-string, if the buf="ok\n" then len=4
      * @return send bytes actually
      */
     int  Send(const char *buf, int len);
