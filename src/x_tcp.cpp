@@ -91,7 +91,7 @@ int XTcp::Send(const char *buf, int len)
     return cnt;
 }
 
-bool XTcp::Connect(const std::string ip, uint16_t port)
+bool XTcp::Connect(const std::string &ip, uint16_t port, int timeout_ms)
 {
     if (this->m_sock <= 0)
     {
@@ -101,14 +101,41 @@ bool XTcp::Connect(const std::string ip, uint16_t port)
     s_addr.sin_family      = AF_INET;
     s_addr.sin_addr.s_addr = inet_addr(ip.c_str());
     s_addr.sin_port        = htons(port);
+    this->SetBlock(false);
+    fd_set set;
     if (::connect(this->m_sock, (sockaddr *)&s_addr, sizeof(s_addr)) != 0)
     {
-        XLOG_ERROR("{} connect to {}:{} failed, err={}", this->m_sock, ip, port, strerror(errno));
-        return false;
+        FD_ZERO(&set);
+        FD_SET(this->m_sock, &set);
+        timeval tm{};
+        tm.tv_sec  = 0;
+        tm.tv_usec = timeout_ms * 1000;
+        if (select(this->m_sock + 1, nullptr, &set, nullptr, &tm) <= 0)
+        {
+            XLOG_ERROR("socket {} connect to {}:{} timeout or error, {}", this->m_sock, ip, port, strerror(errno));
+            return false;
+        }
+        else
+        {
+            int       err = 0;
+            socklen_t len = sizeof(err);
+            if (getsockopt(this->m_sock, SOL_SOCKET, SO_ERROR, &err, &len) < 0)
+            {
+                XLOG_ERROR("getsockopt failed: {}", strerror(errno));
+                return false;
+            }
+            if (err != 0)
+            {
+                XLOG_ERROR("socket {} connect to {}:{} failed: {}", this->m_sock, ip, port, strerror(errno));
+                return false;
+            }
+        }
     }
-    XLOG_INFO("{} connect to {}:{} success", this->m_sock, ip, port);
+    this->SetBlock(true);
+    XLOG_INFO("socket {} connect to {}:{} success", this->m_sock, ip, port);
     return true;
 }
+
 bool XTcp::SetBlock(bool block)
 {
     if (this->m_sock <= 0)

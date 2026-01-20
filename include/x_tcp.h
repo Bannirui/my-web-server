@@ -29,7 +29,7 @@ public:
      * @return send bytes actually
      */
     int  Send(const char *buf, int len);
-    bool Connect(const std::string ip, uint16_t port);
+    bool Connect(const std::string &ip, uint16_t port, int timeout_ms = 1000);
     /**
      * set socket non-blocked
      * @param block true determines non-blocking
@@ -41,7 +41,7 @@ public:
     std::string get_ip() const { return this->m_ip; }
 
 private:
-    uint32_t    m_sock{0};
+    int         m_sock{0};
     uint16_t    m_port{0};
     std::string m_ip;
 };

@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     XTcp client;
     client.CreateSocket();
     client.SetBlock(false);
-    client.Connect("127.0.0.1", 9527);
+    client.Connect("127.0.0.1", 9527, 5000);
     client.Send("client", 7);
     char buf[1024] = {0};
     int  recv_len  = client.Recv(buf, sizeof(buf) - 1);
