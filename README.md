@@ -79,6 +79,11 @@ Used to manually test HTTP.
 - Test
 
     ```sh
-    telnet www.baidu.com 80
+    telnet 127.0.0.1 9527
     GET / HTTP/1.1
+    ```
+
+    ```sh
+    telnet 127.0.0.1 9527
+    GET /index.html HTTP/1.1
     ```
