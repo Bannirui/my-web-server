@@ -14,7 +14,7 @@
 
 void XGetHandler::Handle(const XHttpRequest &req, XHttpResp &resp)
 {
-    std::string uri      = req.uri == "/" ? "/index.html" : req.uri;
+    std::string uri      = req.m_uri == "/" ? "/index.html" : req.m_uri;
     std::string filePath = "www" + uri;
     int         fd       = open(filePath.c_str(), O_RDONLY);
     if (fd < 0)

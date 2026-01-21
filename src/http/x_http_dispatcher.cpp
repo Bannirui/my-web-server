@@ -15,7 +15,7 @@ void XHttpDispatcher::Register(HttpMethod method, std::unique_ptr<IHttpHandler> 
 
 void XHttpDispatcher::Dispatch(const XHttpRequest &req, XHttpResp &resp) const
 {
-    auto it = this->m_handlers.find(req.method);
+    auto it = this->m_handlers.find(req.m_method);
     if (it == this->m_handlers.end())
     {
         resp.m_status      = 405;
