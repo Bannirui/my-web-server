@@ -4,32 +4,30 @@
 
 #include "http/x_get_handler.h"
 
+#include <fcntl.h>
+
 #include "http/x_http_request.h"
 #include "http/x_http_resp.h"
 #include "log/x_log.h"
 
+#include <sys/stat.h>
+
 void XGetHandler::Handle(const XHttpRequest &req, XHttpResp &resp)
 {
-    std::string fileName = req.uri;
-    if ("/" == fileName)
+    std::string uri      = req.uri == "/" ? "index.html" : req.uri;
+    std::string filePath = "www" + uri;
+    int         fd       = open(filePath.c_str(), O_RDONLY);
+    if (fd < 0)
     {
-        fileName = "/index.html";
+        resp.status = 404;
+        resp.body   = "<h2>Not Found</h1>";
+        return;
     }
-    std::string filePath = "www";
-    filePath.append(fileName);
-    FILE *fp = fopen(filePath.c_str(), "rb");
-    if (fp == nullptr)
-    {
-        resp.body = "<h1>Page Not Found</h1>";
-    }
-    // fseek(fp, 0, SEEK_END);
-    // todo int determins the file size max
-    // int fileSize = ftell(fp);
-    // fseek(fp, 0, SEEK_SET);
-    // read the html file
-    char        buf[4096] = {0};
-    int         len       = fread(buf, 1, sizeof(buf), fp);
-    std::string body(buf, len);
-    XLOG_INFO("the html path is {}:{}", filePath, body);
-    resp.body = body;
+
+    struct stat st{};
+    fstat(fd, &st);
+
+    resp.fileFd        = fd;
+    resp.contentLength = st.st_size;
+    resp.isFile        = true;
 }

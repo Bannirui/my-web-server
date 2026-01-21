@@ -6,6 +6,9 @@
 
 #include <string>
 #include <regex>
+#include <sys/sendfile.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "log/x_log.h"
 #include "log/x_dump.h"
@@ -65,7 +68,32 @@ void XWorker::operator()()
     XHttpResp resp;
     this->m_dispatcher->Dispatch(req, resp);
 
-    auto out = resp.Serialize();
-    this->m_client.Send(out.data(), out.size());
+    // send header
+    std::string header;
+    if (resp.isFile)
+    {
+        header = resp.BuildHeader(resp.status, resp.contentType, resp.contentLength);
+    }
+    else
+    {
+        header = resp.BuildHeader(resp.status, resp.contentType, resp.body.size());
+    }
+    this->m_client.Send(header.data(), header.size());
+
+    // send body or file
+    if (resp.isFile)
+    {
+        off_t offset = 0;
+        while (offset < resp.contentLength)
+        {
+            ssize_t sent = sendfile(m_client.get_sock(), resp.fileFd, &offset, resp.contentLength - offset);
+            if (sent <= 0) break;
+        }
+        close(resp.fileFd);
+    }
+    else if (!resp.body.empty())
+    {
+        this->m_client.Send(resp.body.data(), resp.body.size());
+    }
     this->m_client.Close();
 }

@@ -9,5 +9,6 @@
 
 void XPostHandler::Handle(const XHttpRequest &req, XHttpResp &resp)
 {
-    resp.body = "<h1>Hello POST</h1>";
+    // todo
+    resp.contentLength = 0;
 }

@@ -9,5 +9,6 @@
 
 void XDeleteHandler::Handle(const XHttpRequest &req, XHttpResp &resp)
 {
-    resp.body = "<h1>Hello DELETE</h1>";
+    // todo
+    resp.contentLength = 0;
 }

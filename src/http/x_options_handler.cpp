@@ -9,5 +9,6 @@
 
 void XOptionsHandler::Handle(const XHttpRequest &req, XHttpResp &resp)
 {
-    resp.body = "<h1>Hello Options</h1>";
+    // todo
+    resp.contentLength = 0;
 }
