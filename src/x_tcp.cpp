@@ -9,6 +9,10 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 
+#ifdef __APPLE__
+#include <unistd.h>
+#endif
+
 #include "x_log.h"
 
 #define BACK_LOG_SZ 10

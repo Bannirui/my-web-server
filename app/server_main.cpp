@@ -2,11 +2,14 @@
 // Created by dingrui on 1/19/26.
 //
 
-#include <sys/epoll.h>
-
 #include "x_log.h"
 #include "x_tcp.h"
-#include "x_thread.h"
+#include "th/x_thread.h"
+#include "th/x_thread_pool.h"
+#include "x_poll_factory.h"
+
+// 线程池
+XThreadPool pool(std::thread::hardware_concurrency());
 
 int main(int argc, char *argv[])
 {
@@ -20,27 +23,26 @@ int main(int argc, char *argv[])
     XTcp server;
     server.CreateSocket();
     server.Bind(port);
-    int         ep_fd = epoll_create(256);
-    epoll_event ev{};
-    ev.data.fd = server.get_sock();
-    // EPOLLIN=connect and close
-    ev.events = EPOLLIN | EPOLLET;
-    epoll_ctl(ep_fd, EPOLL_CTL_ADD, ev.data.fd, &ev);
-    epoll_event events[1024];
-    // char        buf[1024] = {0};
-    // const char *msg       = "HTTP/1.1 200 OK\r\nContent-Length: 1\r\nX\r\n\r\n";
     server.SetBlock(false);
+
+    XPoller *poller = CreatePoller();
+    poller->Init();
+    poller->Add(server.get_sock());
+
+    // 收多路复用器里面就绪的socket
+    std::vector<XEvent> events;
     for (;;)
     {
-        int cnt = epoll_wait(ep_fd, events, 1024, 500);
-        if (cnt <= 0)
+        events.clear();
+        int n = poller->Wait(events, 500);
+        if (n <= 0)
         {
             continue;
         }
-        for (int i = 0; i < cnt; ++i)
+        for (auto &ev : events)
         {
             // connect or read
-            if (events[i].data.fd == server.get_sock())
+            if (ev.fd == server.get_sock())
             {
                 // clone a new socket, and register to selector
                 for (;;)
@@ -53,9 +55,7 @@ int main(int argc, char *argv[])
                     {
                         break;
                     }
-                    ev.data.fd = client.get_sock();
-                    ev.events  = EPOLLIN | EPOLLET;
-                    epoll_ctl(ep_fd, EPOLL_CTL_ADD, ev.data.fd, &ev);
+                    poller->Add(client.get_sock());
                 }
             }
             else
@@ -70,16 +70,15 @@ int main(int argc, char *argv[])
                 // client.Close();
 
                 XTcp client;
-                client.set_sock(events[i].data.fd);
-                XThread    *th = new XThread(client);
-                std::thread sth(&XThread::Main, th);
-                sth.detach();
+                client.set_sock(ev.fd);
+                // 从系统多路复用器删除防止重复触发
+                poller->Del(ev.fd);
+                // 封装成任务提交给线程池
+                pool.Submit(XThread(client));
             }
         }
-        // TcpThread  *th = new TcpThread(client);
-        // std::thread sth(&TcpThread::Main, th);
-        // sth.detach();
     }
+    delete poller;
     server.Close();
     return 0;
 }

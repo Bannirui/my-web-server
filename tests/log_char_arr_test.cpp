@@ -13,7 +13,7 @@ int main()
         arr[i] = 'a';
     }
     arr[0]    = '\0';
-    arr[1024] = '\0';
-    XLOG_INFO("{}", std::string(arr, 1023));
+    arr[1023] = '\0';
+    XLOG_INFO("{}", std::string(arr, 2));
     return 0;
 }
