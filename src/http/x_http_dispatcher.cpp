@@ -1,0 +1,26 @@
+//
+// Created by dingrui on 1/21/26.
+//
+
+#include "http/x_http_dispatcher.h"
+
+#include "http/x_http_handler.h"
+#include "http/x_http_request.h"
+#include "http/x_http_resp.h"
+
+void XHttpDispatcher::Register(HttpMethod method, std::unique_ptr<IHttpHandler> handler)
+{
+    this->m_handlers[method] = std::move(handler);
+}
+
+void XHttpDispatcher::Dispatch(const XHttpRequest &req, XHttpResp &resp) const
+{
+    auto it = this->m_handlers.find(req.method);
+    if (it == this->m_handlers.end())
+    {
+        resp.status = 405;
+        resp.body   = "Method Not Allowed";
+        return;
+    }
+    it->second->Handle(req, resp);
+}

@@ -4,9 +4,16 @@
 
 #include "log/x_log.h"
 #include "x_tcp.h"
-#include "th/x_thread.h"
+#include "th/x_worker.h"
 #include "th/x_thread_pool.h"
 #include "x_poll_factory.h"
+#include "http/x_delete_handler.h"
+#include "http/x_get_handler.h"
+#include "http/x_http_dispatcher.h"
+#include "http/x_http_request.h"
+#include "http/x_options_handler.h"
+#include "http/x_post_handler.h"
+#include "http/x_put_handler.h"
 
 // 线程池
 XThreadPool pool(std::thread::hardware_concurrency());
@@ -14,6 +21,13 @@ XThreadPool pool(std::thread::hardware_concurrency());
 int main(int argc, char *argv[])
 {
     XLog::Init();
+
+    auto dispatcher = std::make_shared<XHttpDispatcher>();
+    dispatcher->Register(HttpMethod::GET_, std::make_unique<XGetHandler>());
+    dispatcher->Register(HttpMethod::POST_, std::make_unique<XPostHandler>());
+    dispatcher->Register(HttpMethod::PUT_, std::make_unique<XPutHandler>());
+    dispatcher->Register(HttpMethod::DELETE_, std::make_unique<XDeleteHandler>());
+    dispatcher->Register(HttpMethod::OPTIONS_, std::make_unique<XOptionsHandler>());
 
     uint16_t port = 9527;
     if (argc > 1)
@@ -66,7 +80,7 @@ int main(int argc, char *argv[])
                 // 从系统多路复用器删除防止重复触发
                 poller->Del(ev.fd);
                 // 封装成任务提交给线程池
-                pool.Submit(XThread(client));
+                pool.Submit(XWorker(client, dispatcher));
             }
         }
     }
