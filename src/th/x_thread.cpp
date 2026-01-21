@@ -25,6 +25,7 @@ void XThread::operator()()
     // http协议里面有\r\n转义字符 把不可见的字符转义打印日志
     XLOG_INFO("recv client {} bytes:\n{}", recvLen, DumpBinary(buf, recvLen));
     // for GET request, respond
+    // todo 解析请求协议中的url路径 读取对应的文件响应出去
     std::string resp;
     resp.append("HTTP/1.1 200 OK\r\n");
     resp.append("Server: XHTTP\r\n");
