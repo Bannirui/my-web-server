@@ -19,15 +19,19 @@ void XGetHandler::Handle(const XHttpRequest &req, XHttpResp &resp)
     int         fd       = open(filePath.c_str(), O_RDONLY);
     if (fd < 0)
     {
-        resp.status = 404;
-        resp.body   = "<h2>Not Found</h1>";
+        resp.m_status      = 404;
+        resp.m_contentType = CONTENT_TYPE_HTML;
+        resp.m_body.m_type = XHttpBody::Type::Memory;
+        resp.m_body.m_data = "<h2>Not Found</h1>";
         return;
     }
 
     struct stat st{};
     fstat(fd, &st);
 
-    resp.fileFd        = fd;
-    resp.contentLength = st.st_size;
-    resp.isFile        = true;
+    resp.m_status      = 200;
+    resp.m_contentType = CONTENT_TYPE_HTML;
+    resp.m_body.m_type = XHttpBody::Type::File;
+    resp.m_body.m_fd   = fd;
+    resp.m_body.m_size = st.st_size;
 }

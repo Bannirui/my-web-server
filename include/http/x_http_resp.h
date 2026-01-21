@@ -9,65 +9,85 @@
 #define CONTENT_TYPE_HTML "text/html"
 #define CONTENT_TYPE_PLAIN "text/plain"
 
+struct XHttpBody
+{
+    enum class Type
+    {
+        None,
+        Memory,
+        File
+    };
+
+    Type m_type = Type::None;
+
+    // memory body
+    std::string m_data;
+
+    // file body
+    int   m_fd   = -1;
+    off_t m_size = 0;
+
+    off_t Length() const
+    {
+        switch (m_type)
+        {
+            case Type::Memory:
+                return m_data.size();
+            case Type::File:
+                return m_size;
+            default:
+                return 0;
+        }
+    }
+
+    bool Empty() const { return m_type == Type::None; }
+};
+
 struct XHttpResp
 {
-    int         status      = 200;
-    std::string contentType = CONTENT_TYPE_HTML;
+    int         m_status      = 200;
+    std::string m_contentType = CONTENT_TYPE_HTML;
+    bool        m_keepAlive   = false;
 
-    // for small response, like errors hint
-    std::string body;
+    XHttpBody m_body;
 
-    // for file response, like static html
-    int    fileFd        = -1;
-    bool   isFile        = false;
-    off_t contentLength = 0;
+    off_t ContentLength() const { return m_body.Length(); }
 
-    bool HasBody() const { return !body.empty(); }
+    bool HasBody() const { return !m_body.Empty(); }
 
-    std::string SerializeHeader() const
-    {
-        std::string header;
-        header.append("HTTP/1.1 " + std::to_string(status) + " OK\r\n");
-        header.append("Server: XHTTP\r\n");
-        header.append("Content-Type: " + contentType + "\r\n");
-        header.append("Content-Length: " + std::to_string(contentLength) + "\r\n");
-        header.append("\r\n");
-        return header;
-    }
-
-    std::string BuildHeader(bool keep_alive) const
-    {
-        size_t len = isFile ? contentLength : body.size();
-        return BuildHeader(status, contentType, len, keep_alive);
-    }
-
-    inline std::string BuildHeader(int stat, std::string_view content_type, size_t content_len,
-                                   bool keep_alive = false) const
+    std::string BuildHeader() const
     {
         std::string h;
-        h.reserve(256);  // avoid reallocs
-        h.append("HTTP/1.1 " + std::to_string(stat) + " " + ReasonPhrase(stat) + "\r\n");
+        h.reserve(256);
+        h.append("HTTP/1.1 ");
+        h.append(std::to_string(m_status));
+        h.append(" ");
+        h.append(ReasonPhrase(m_status));
+        h.append("\r\n");
+
         h.append("Server: XHTTP\r\n");
-        if (!contentType.empty())
+
+        if (!m_contentType.empty())
         {
             h.append("Content-Type: ");
-            h += content_type;
+            h.append(m_contentType);
             h.append("\r\n");
         }
 
-        h.append("Content-Length: " + std::to_string(content_len) + "\r\n");
-
-        h.append("Connection: ");
-        h += keep_alive ? "keep-alive" : "close";
+        h.append("Content-Length: ");
+        h.append(std::to_string(ContentLength()));
         h.append("\r\n");
 
-        h.append("\r\n");  // end of headers
+        h.append("Connection: ");
+        h.append(m_keepAlive ? "keep-alive" : "close");
+        h.append("\r\n\r\n");
+
         return h;
     }
 
-    inline const char *ReasonPhrase(int stat) const
+    static std::string_view ReasonPhrase(int code)
     {
-        switch (stat)
+        switch (code)
         {
             case 200:
                 return "OK";

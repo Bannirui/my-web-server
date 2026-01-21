@@ -69,31 +69,23 @@ void XWorker::operator()()
     this->m_dispatcher->Dispatch(req, resp);
 
     // send header
-    std::string header;
-    if (resp.isFile)
-    {
-        header = resp.BuildHeader(resp.status, resp.contentType, resp.contentLength);
-    }
-    else
-    {
-        header = resp.BuildHeader(resp.status, resp.contentType, resp.body.size());
-    }
+    std::string header = resp.BuildHeader();
     this->m_client.Send(header.data(), header.size());
 
     // send body or file
-    if (resp.isFile)
+    if (resp.m_body.m_type == XHttpBody::Type::Memory)
+    {
+        this->m_client.Send(resp.m_body.m_data.data(), resp.m_body.m_data.size());
+    }
+    else if (resp.m_body.m_type == XHttpBody::Type::File)
     {
         off_t offset = 0;
-        while (offset < resp.contentLength)
+        while (offset < resp.m_body.m_size)
         {
-            ssize_t sent = sendfile(m_client.get_sock(), resp.fileFd, &offset, resp.contentLength - offset);
+            ssize_t sent = sendfile(m_client.get_sock(), resp.m_body.m_fd, &offset, resp.m_body.m_size - offset);
             if (sent <= 0) break;
         }
-        close(resp.fileFd);
-    }
-    else if (!resp.body.empty())
-    {
-        this->m_client.Send(resp.body.data(), resp.body.size());
+        close(resp.m_body.m_fd);
     }
     this->m_client.Close();
 }

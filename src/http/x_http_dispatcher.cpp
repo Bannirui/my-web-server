@@ -18,9 +18,10 @@ void XHttpDispatcher::Dispatch(const XHttpRequest &req, XHttpResp &resp) const
     auto it = this->m_handlers.find(req.method);
     if (it == this->m_handlers.end())
     {
-        resp.status      = 405;
-        resp.body        = "Method Not Allowed";
-        resp.contentType = CONTENT_TYPE_PLAIN;
+        resp.m_status      = 405;
+        resp.m_contentType = CONTENT_TYPE_HTML;
+        resp.m_body.m_type = XHttpBody::Type::Memory;
+        resp.m_body.m_data = "<h2>Method Not Allowed</h1>";
         return;
     }
     it->second->Handle(req, resp);
