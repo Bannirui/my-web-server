@@ -40,6 +40,7 @@ bool XHttpRequestParser::readHeader(XTcp &client, std::string &out)
         {
             return false;
         }
+        buf[n] = '\0';
         out.append(buf, n);
         if (out.find("\r\n\r\n") != std::string::npos)
         {
