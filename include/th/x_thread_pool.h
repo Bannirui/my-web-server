@@ -7,6 +7,8 @@
 #include <functional>
 #include <queue>
 #include <thread>
+#include <condition_variable>
+#include <mutex>
 
 class XThreadPool
 {

@@ -9,7 +9,7 @@
 #ifdef __APPLE__
 #include "ev/x_kqueue_poller.h"
 inline XPoller* CreatePoller() { return new XKqueuePoller(); }
-#else
+#elif __linux__
 #include "ev/x_epoll_poller.h"
 inline XPoller* CreatePoller() { return new XEpollPoller(); }
 #endif

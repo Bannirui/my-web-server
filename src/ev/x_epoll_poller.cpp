@@ -2,7 +2,7 @@
 // Created by rui ding on 2026/1/21.
 //
 
-#ifdef __UNIX__
+#ifdef __linux__
 
 #include "ev/x_epoll_poller.h"
 
@@ -36,7 +36,7 @@ bool XEpollPoller::Del(int fd)
 int XEpollPoller::Wait(std::vector<XEvent> &events, int timeout_ms)
 {
     epoll_event evs[1024];
-    int         n = epoll_wait(ep_fd_, evs, 1024, timeout_ms);
+    int         n = epoll_wait(this->m_ep_fd, evs, 1024, timeout_ms);
     for (int i = 0; i < n; ++i)
     {
         events.push_back({evs[i].data.fd});

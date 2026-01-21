@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#ifdef __UNIX__
+#ifdef __linux__
 
 #include "x_poller.h"
 
