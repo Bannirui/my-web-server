@@ -4,7 +4,7 @@
 
 #include "th/x_thread_pool.h"
 
-#include "x_log.h"
+#include "log/x_log.h"
 
 XThreadPool::XThreadPool(size_t n)
 {

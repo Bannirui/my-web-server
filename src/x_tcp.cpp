@@ -13,7 +13,7 @@
 #include <unistd.h>
 #endif
 
-#include "x_log.h"
+#include "log/x_log.h"
 
 #define BACK_LOG_SZ 10
 
@@ -112,8 +112,8 @@ bool XTcp::Connect(const std::string &ip, uint16_t port, int timeout_ms)
         FD_ZERO(&set);
         FD_SET(this->m_sock, &set);
         timeval tm{};
-        tm.tv_sec  = 0;
-        tm.tv_usec = timeout_ms * 1000;
+        tm.tv_sec  = timeout_ms / 1000;
+        tm.tv_usec = (timeout_ms % 1000) * 1000;
         if (select(this->m_sock + 1, nullptr, &set, nullptr, &tm) <= 0)
         {
             XLOG_ERROR("socket {} connect to {}:{} timeout or error, {}", this->m_sock, ip, port, strerror(errno));

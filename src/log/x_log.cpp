@@ -2,7 +2,7 @@
 // Created by rui ding on 2025/9/12.
 //
 
-#include "x_log.h"
+#include "log/x_log.h"
 
 std::shared_ptr<spdlog::logger> XLog::logger;
 

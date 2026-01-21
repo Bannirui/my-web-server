@@ -6,7 +6,8 @@
 
 #include <string>
 
-#include "x_log.h"
+#include "log/x_log.h"
+#include "log/x_dump.h"
 
 XThread::XThread(XTcp client) : m_client(std::move(client)) {}
 
@@ -22,20 +23,7 @@ void XThread::operator()()
     }
     buf[recvLen] = '\0';
     // http协议里面有\r\n转义字符 把不可见的字符转义打印日志
-    std::string dump;
-    dump.reserve(recvLen * 2);
-    for (int i = 0; i < recvLen; ++i) {
-        unsigned char c = buf[i];
-        if (c == '\r') dump += "\\r";
-        else if (c == '\n') dump += "\\n\n";
-        else if (isprint(c)) dump += c;
-        else {
-            char tmp[8];
-            snprintf(tmp, sizeof(tmp), "\\x%02X", c);
-            dump += tmp;
-        }
-    }
-    XLOG_INFO("recv client {} bytes:\n{}", recvLen, dump);
+    XLOG_INFO("recv client {} bytes:\n{}", recvLen, DumpBinary(buf, recvLen));
     // for GET request, respond
     std::string resp;
     resp.append("HTTP/1.1 200 OK\r\n");

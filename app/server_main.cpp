@@ -2,7 +2,7 @@
 // Created by dingrui on 1/19/26.
 //
 
-#include "x_log.h"
+#include "log/x_log.h"
 #include "x_tcp.h"
 #include "th/x_thread.h"
 #include "th/x_thread_pool.h"
@@ -61,14 +61,6 @@ int main(int argc, char *argv[])
             else
             {
                 // data arrive in, we can read data from according socket
-                // XTcp client;
-                // client.set_sock(events[i].data.fd);
-                // client.Recv(buf, sizeof(buf) - 1);
-                // client.Send(msg, strlen(msg) + 1);
-                // // remove from selector
-                // epoll_ctl(ep_fd, EPOLL_CTL_DEL, client.get_sock(), &ev);
-                // client.Close();
-
                 XTcp client;
                 client.set_sock(ev.fd);
                 // 从系统多路复用器删除防止重复触发
