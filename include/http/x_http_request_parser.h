@@ -7,7 +7,7 @@
 #include <string>
 
 class XTcp;
-class XHttpRequest;
+struct XHttpRequest;
 
 class XHttpRequestParser
 {

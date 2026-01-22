@@ -6,16 +6,13 @@
 
 #include <string>
 #include <regex>
-#include <sys/sendfile.h>
-#include <sys/types.h>
 #include <unistd.h>
 
-#include "log/x_log.h"
-#include "log/x_dump.h"
 #include "http/x_http_request.h"
 #include "http/x_http_resp.h"
 #include "http/x_http_dispatcher.h"
 #include "http/x_http_request_parser.h"
+#include "net/x_send_file.h"
 
 XWorker::XWorker(XTcp client, std::shared_ptr<const XHttpDispatcher> dispatcher)
     : m_client(std::move(client)), m_dispatcher(dispatcher)
@@ -54,7 +51,7 @@ void XWorker::operator()()
         off_t offset = 0;
         while (offset < resp.m_body.m_size)
         {
-            ssize_t sent = sendfile(m_client.get_sock(), resp.m_body.m_fd, &offset, resp.m_body.m_size - offset);
+            ssize_t sent = SendFile(this->m_client.get_sock(), resp.m_body.m_fd, offset, resp.m_body.m_size - offset);
             if (sent <= 0) break;
         }
         close(resp.m_body.m_fd);

@@ -4,6 +4,8 @@
 
 #include "http/x_http_request_parser.h"
 
+#include <sstream>
+
 #include "x_tcp.h"
 #include "http/x_http_request.h"
 #include "x_string.h"
