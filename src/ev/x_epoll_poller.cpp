@@ -12,7 +12,14 @@
 bool XEpollPoller::Init()
 {
     this->m_ep_fd = epoll_create(256);
-    return this->m_ep_fd > 0;
+    if (this->m_ep_fd < 0) { return false; }
+    // eventfd 非阻塞+close-on-exec
+    this->m_wakeup_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (this->m_wakeup_fd < 0) { return false; }
+    epoll_event ev{};
+    ev.events = EPOLLIN;
+    ev.data.fd = this->m_wakeup_fd;
+    return epoll_ctl(this->m_ep_fd, EPOLL_CTL_ADD, this->m_wakeup_fd, &ev) == 0;
 }
 
 bool XEpollPoller::Add(int fd)
@@ -42,6 +49,13 @@ int XEpollPoller::Wait(std::vector<XEvent> &events, int timeout_ms)
         events.push_back({evs[i].data.fd});
     }
     return n;
+}
+
+int XEpollPoller::Wait(std::vector<XEvent> &events, int timeout_ms)
+{
+    uint64_t one = 1;
+    // 写eventfd epoll会立刻返回
+    write(m_wakeup_fd, &one, sizeof(one));
 }
 
 #endif
