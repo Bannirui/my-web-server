@@ -20,27 +20,32 @@ server.
 
 ```text
         +-------------+
-        |   Clients   |
-        +------+------+
-               |
-               | TCP
-               v
-        +------+------+
-        |   Socket     |   (bind / listen / accept)
+        |Client/Server|
         +------+------+
                |
                v
         +------+------+
-        |  Selector    |   (kqueue / epoll)
-        +------+------+
-               |
-        +------+------+
-        | Thread Pool  |   (worker threads)
+        |     TCP     |   
         +------+------+
                |
                v
         +------+------+
-        | HTTP Handler |   (parse & response)
+        |    Socket   |   (bind / listen / accept / connect)
+        +------+------+
+               |
+               v
+        +------+------+
+        |   Selector  |   (kqueue / epoll)
+        +------+------+
+               |
+               V
+        +------+------+
+        | Thread Pool |   (worker threads)
+        +------+------+
+               |
+               v
+        +------+------+
+        | HTTP Handler|   (parse / response)
         +-------------+
 ```
 
