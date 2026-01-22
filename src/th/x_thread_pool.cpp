@@ -16,24 +16,42 @@ XThreadPool::XThreadPool(size_t n)
 
 XThreadPool::~XThreadPool()
 {
-    {
-        std::lock_guard<std::mutex> lk(this->m_mtx);
-        this->m_stop = true;
-    }
-    this->m_cv.notify_all();
-    for (auto &t : this->m_workers)
-    {
-        t.join();
-    }
+    this->Shutdown();
 }
 
-void XThreadPool::Submit(std::function<void()> task)
+bool XThreadPool::Submit(std::function<void()> task)
 {
     {
         std::lock_guard<std::mutex> lk(this->m_mtx);
+        if (this->m_stop)
+        {
+            XLOG_WARN("ThreadPool stopped, reject task");
+            return false;
+        }
         this->m_tasks.push(std::move(task));
     }
     this->m_cv.notify_one();
+    return true;
+}
+
+void XThreadPool::Shutdown()
+{
+    {
+        std::lock_guard<std::mutex> lk(this->m_mtx);
+        if (m_stop)
+        {
+            return;
+        }
+        m_stop = true;
+    }
+    m_cv.notify_all();
+    for (auto &t : m_workers)
+    {
+        if (t.joinable())
+        {
+            t.join();
+        }
+    }
 }
 
 void XThreadPool::worker()
@@ -51,7 +69,18 @@ void XThreadPool::worker()
             task = std::move(this->m_tasks.front());
             this->m_tasks.pop();
         }
-        XLOG_INFO("从线程池拿到任务 开始执行");
-        task();
+        try
+        {
+            XLOG_INFO("线程池开始执行任务");
+            task();
+        }
+        catch (const std::exception &e)
+        {
+            XLOG_ERROR("线程池任务异常: {}", e.what());
+        }
+        catch (...)
+        {
+            XLOG_ERROR("线程池任务发生未知异常");
+        }
     }
 }

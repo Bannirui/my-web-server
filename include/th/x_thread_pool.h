@@ -16,7 +16,9 @@ public:
     explicit XThreadPool(size_t n);
     ~XThreadPool();
 
-    void Submit(std::function<void()> task);
+    bool Submit(std::function<void()> task);
+    // 等线程池里面已经存在的任务执行完
+    void Shutdown();
 
 private:
     void worker();
