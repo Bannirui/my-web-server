@@ -7,7 +7,7 @@
 #include <sstream>
 
 #include "x_tcp.h"
-#include "http/x_http_request.h"
+#include "../../include/http/protocol/x_http_request.h"
 #include "x_string.h"
 
 bool XHttpRequestParser::ReadRequest(XTcp &client, XHttpRequest &req)

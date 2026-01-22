@@ -8,8 +8,8 @@
 #include <regex>
 #include <unistd.h>
 
-#include "http/x_http_request.h"
-#include "http/x_http_resp.h"
+#include "http/protocol/x_http_request.h"
+#include "http/protocol/x_http_resp.h"
 #include "http/x_http_dispatcher.h"
 #include "http/x_http_request_parser.h"
 #include "net/x_send_file.h"
@@ -33,8 +33,6 @@ void XWorker::operator()()
     }
     // parse request line
     XHttpResp resp;
-    resp.m_keepAlive = req.KeepAlive();
-
     this->m_dispatcher->Dispatch(req, resp);
 
     // send header

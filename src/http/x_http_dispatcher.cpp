@@ -4,9 +4,9 @@
 
 #include "http/x_http_dispatcher.h"
 
-#include "http/x_http_handler.h"
-#include "http/x_http_request.h"
-#include "http/x_http_resp.h"
+#include "http/handler/x_http_handler.h"
+#include "http/protocol/x_http_request.h"
+#include "http/protocol/x_http_resp.h"
 
 void XHttpDispatcher::Register(HttpMethod method, std::unique_ptr<IHttpHandler> handler)
 {
@@ -19,7 +19,8 @@ void XHttpDispatcher::Dispatch(const XHttpRequest &req, XHttpResp &resp) const
     if (it == this->m_handlers.end())
     {
         resp.m_status      = 405;
-        resp.m_contentType = CONTENT_TYPE_HTML;
+        // todo
+        // resp.m_contentType = CONTENT_TYPE_HTML;
         resp.m_body.m_type = XHttpBody::Type::Memory;
         resp.m_body.m_data = "<h2>Method Not Allowed</h1>";
         return;

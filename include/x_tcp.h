@@ -9,12 +9,16 @@
 class XTcp
 {
 public:
+    // lifecycle
     XTcp()  = default;
     ~XTcp() = default;
     int  CreateSocket();
     bool Bind(uint16_t port);
+    bool Connect(const std::string &ip, uint16_t port, int timeout_ms = 1000);
     XTcp Accept();
     void Close();
+
+    // 负责IO
     /**
      *
      * @param buf
@@ -28,21 +32,27 @@ public:
      * @param len the bytes of buf, including 1 \0 space for c-string, if the buf="ok\n" then len=4
      * @return send bytes actually
      */
-    int  Send(const char *buf, int len);
-    bool Connect(const std::string &ip, uint16_t port, int timeout_ms = 1000);
+    int Send(const char *buf, int len);
     /**
      * set socket non-blocked
      * @param block true determines non-blocking
      */
     bool SetBlock(bool block = false);
 
+    // socket信息
     int         get_sock() const { return this->m_sock; }
     void        set_sock(int sock_fd) { this->m_sock = sock_fd; }
-    uint16_t    get_port() const { return this->m_port; }
-    std::string get_ip() const { return this->m_ip; }
+
+    // remote
+    std::string RemoteIP() const;
+    uint16_t    RemotePort() const;
+
+    // local
+    std::string LocalIP() const;
+    uint16_t    LocalPort() const;
 
 private:
+    // TCP的语义是一条已经建立连接的TCP连接 不在成员里面保存ip和port信息是担心不一致
+    // ip和port应该是由client和server保存
     int         m_sock{0};
-    uint16_t    m_port{0};
-    std::string m_ip;
 };

@@ -48,53 +48,6 @@ bool XTcp::Bind(uint16_t port)
     return true;
 }
 
-XTcp XTcp::Accept()
-{
-    XTcp        ret;
-    sockaddr_in client_addr;
-    socklen_t   client_addr_len = sizeof(client_addr);
-    int         client_sock     = accept(this->m_sock, (sockaddr *)&client_addr, &client_addr_len);
-    if (client_sock <= 0)
-    {
-        return ret;
-    }
-    ret.m_sock = client_sock;
-    ret.m_ip   = inet_ntoa(client_addr.sin_addr);
-    ret.m_port = ntohs(client_addr.sin_port);
-    XLOG_INFO("server accept client, client ip={} port={}, assign socket {} for communication", ret.m_ip, ret.m_port,
-              ret.m_sock);
-    return ret;
-}
-
-void XTcp::Close()
-{
-    if (this->m_sock <= 0)
-    {
-        return;
-    }
-    close(this->m_sock);
-}
-
-int XTcp::Recv(char *buf, int len)
-{
-    return recv(this->m_sock, buf, len, 0);
-}
-
-int XTcp::Send(const char *buf, int len)
-{
-    int cnt = 0;
-    while (cnt != len)
-    {
-        int send_len = send(this->m_sock, buf + cnt, len - cnt, 0);
-        if (send_len <= 0)
-        {
-            break;
-        }
-        cnt += send_len;
-    }
-    return cnt;
-}
-
 bool XTcp::Connect(const std::string &ip, uint16_t port, int timeout_ms)
 {
     if (this->m_sock <= 0)
@@ -140,6 +93,53 @@ bool XTcp::Connect(const std::string &ip, uint16_t port, int timeout_ms)
     return true;
 }
 
+XTcp XTcp::Accept()
+{
+    XTcp        ret;
+    sockaddr_in client_addr;
+    socklen_t   client_addr_len = sizeof(client_addr);
+    int         client_sock     = accept(this->m_sock, (sockaddr *)&client_addr, &client_addr_len);
+    if (client_sock <= 0)
+    {
+        return ret;
+    }
+    ret.m_sock            = client_sock;
+    std::string dest_ip   = inet_ntoa(client_addr.sin_addr);
+    uint16_t    dest_port = ntohs(client_addr.sin_port);
+    XLOG_INFO("server accept client, client ip={} port={}, assign socket {} for communication", dest_ip, dest_port,
+              ret.m_sock);
+    return ret;
+}
+
+void XTcp::Close()
+{
+    if (this->m_sock <= 0)
+    {
+        return;
+    }
+    close(this->m_sock);
+}
+
+int XTcp::Recv(char *buf, int len)
+{
+    return recv(this->m_sock, buf, len, 0);
+}
+
+int XTcp::Send(const char *buf, int len)
+{
+    int cnt = 0;
+    while (cnt != len)
+    {
+        int send_len = send(this->m_sock, buf + cnt, len - cnt, 0);
+        if (send_len <= 0)
+        {
+            break;
+        }
+        cnt += send_len;
+    }
+    return cnt;
+}
+
 bool XTcp::SetBlock(bool block)
 {
     if (this->m_sock <= 0)
@@ -164,4 +164,47 @@ bool XTcp::SetBlock(bool block)
         return false;
     }
     return true;
+}
+
+std::string XTcp::RemoteIP() const
+{
+    sockaddr_in addr{};
+    socklen_t   len = sizeof(addr);
+    if (getpeername(this->m_sock, (sockaddr *)&addr, &len) != 0) return {};
+    return inet_ntoa(addr.sin_addr);
+}
+
+uint16_t XTcp::RemotePort() const
+{
+    sockaddr_in addr{};
+    socklen_t   len = sizeof(addr);
+    if (getpeername(this->m_sock, (sockaddr *)&addr, &len) != 0) return 0;
+    return ntohs(addr.sin_port);
+}
+
+std::string XTcp::LocalIP() const
+{
+    sockaddr_in addr{};
+    socklen_t   len = sizeof(addr);
+    if (getsockname(m_sock, reinterpret_cast<sockaddr *>(&addr), &len) != 0)
+    {
+        return {};
+    }
+    char ip[INET_ADDRSTRLEN];
+    if (!inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip)))
+    {
+        return {};
+    }
+    return std::string(ip);
+}
+
+uint16_t XTcp::LocalPort() const
+{
+    sockaddr_in addr{};
+    socklen_t   len = sizeof(addr);
+    if (getsockname(m_sock, reinterpret_cast<sockaddr *>(&addr), &len) != 0)
+    {
+        return 0;
+    }
+    return ntohs(addr.sin_port);
 }

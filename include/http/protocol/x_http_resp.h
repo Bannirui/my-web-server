@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #define CONTENT_TYPE_HTML "text/html"
 #define CONTENT_TYPE_PLAIN "text/plain"
@@ -45,21 +46,20 @@ struct XHttpBody
 
 struct XHttpResp
 {
-    int         m_status      = 200;
-    std::string m_contentType = CONTENT_TYPE_HTML;
-    bool        m_keepAlive   = false;
+    int m_status = 200;
+    // client解析得到
+    std::string                                  m_reason;
+    std::string                                  m_version = "HTTP/1.1";
+    std::unordered_map<std::string, std::string> m_headers;
+    XHttpBody                                    m_body;
 
-    XHttpBody m_body;
-
-    off_t ContentLength() const { return m_body.Length(); }
-
-    bool HasBody() const { return !m_body.Empty(); }
-
+    // ---server专用---
     std::string BuildHeader() const
     {
         std::string h;
         h.reserve(256);
-        h.append("HTTP/1.1 ");
+        h.append(this->m_version);
+        h.append(" ");
         h.append(std::to_string(m_status));
         h.append(" ");
         h.append(ReasonPhrase(m_status));
@@ -67,11 +67,9 @@ struct XHttpResp
 
         h.append("Server: XHTTP\r\n");
 
-        if (!m_contentType.empty())
+        if (!this->m_headers.count("Content-Type"))
         {
-            h.append("Content-Type: ");
-            h.append(m_contentType);
-            h.append("\r\n");
+            h.append("Content-Type: text/html\r\n");
         }
 
         h.append("Content-Length: ");
@@ -79,10 +77,23 @@ struct XHttpResp
         h.append("\r\n");
 
         h.append("Connection: ");
-        h.append(m_keepAlive ? "keep-alive" : "close");
+        h.append(this->KeepAlive() ? "keep-alive" : "close");
         h.append("\r\n\r\n");
 
         return h;
+    }
+    // ---common api---
+    off_t ContentLength() const { return this->m_body.Length(); }
+
+    // 不维护成员表示keep-alive 从header中推导
+    bool KeepAlive() const
+    {
+        auto it = this->m_headers.find("Connection");
+        if (it == this->m_headers.end())
+        {
+            return this->m_version == "HTTP/1.1";
+        }
+        return it->second == "keep-alive";
     }
 
     static std::string_view ReasonPhrase(int code)
