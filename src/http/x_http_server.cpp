@@ -105,5 +105,5 @@ void XHttpServer::handleClient(int fd)
     // 从系统多路复用器删除防止重复触发
     this->m_poller->Del(fd);
     // 封装成任务提交给线程池
-    this->m_pool.Submit(XWorker(std::move(client), this->m_dispatcher));
+    this->m_pool.Submit(XWorker(client, this->m_dispatcher));
 }

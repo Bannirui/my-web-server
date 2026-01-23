@@ -34,7 +34,7 @@ bool XTcp::Bind(uint16_t port)
     {
         this->CreateSocket();
     }
-    sockaddr_in s_addr;
+    sockaddr_in s_addr{};
     s_addr.sin_family      = AF_INET;
     s_addr.sin_port        = htons(port);
     s_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -54,7 +54,7 @@ bool XTcp::Connect(const std::string &ip, uint16_t port, int timeout_ms)
     {
         this->CreateSocket();
     }
-    sockaddr_in s_addr;
+    sockaddr_in s_addr{};
     s_addr.sin_family      = AF_INET;
     s_addr.sin_addr.s_addr = inet_addr(ip.c_str());
     s_addr.sin_port        = htons(port);
@@ -72,20 +72,17 @@ bool XTcp::Connect(const std::string &ip, uint16_t port, int timeout_ms)
             XLOG_ERROR("socket {} connect to {}:{} timeout or error, {}", this->m_sock, ip, port, strerror(errno));
             return false;
         }
-        else
+        int       err = 0;
+        socklen_t len = sizeof(err);
+        if (getsockopt(this->m_sock, SOL_SOCKET, SO_ERROR, &err, &len) < 0)
         {
-            int       err = 0;
-            socklen_t len = sizeof(err);
-            if (getsockopt(this->m_sock, SOL_SOCKET, SO_ERROR, &err, &len) < 0)
-            {
-                XLOG_ERROR("getsockopt failed: {}", strerror(errno));
-                return false;
-            }
-            if (err != 0)
-            {
-                XLOG_ERROR("socket {} connect to {}:{} failed: {}", this->m_sock, ip, port, strerror(errno));
-                return false;
-            }
+            XLOG_ERROR("getsockopt failed: {}", strerror(errno));
+            return false;
+        }
+        if (err != 0)
+        {
+            XLOG_ERROR("socket {} connect to {}:{} failed: {}", this->m_sock, ip, port, strerror(errno));
+            return false;
         }
     }
     this->SetBlock(true);
@@ -93,7 +90,7 @@ bool XTcp::Connect(const std::string &ip, uint16_t port, int timeout_ms)
     return true;
 }
 
-XTcp XTcp::Accept()
+XTcp XTcp::Accept() const
 {
     XTcp        ret;
     sockaddr_in client_addr;
@@ -111,7 +108,7 @@ XTcp XTcp::Accept()
     return ret;
 }
 
-void XTcp::Close()
+void XTcp::Close() const
 {
     if (this->m_sock <= 0)
     {
@@ -120,12 +117,12 @@ void XTcp::Close()
     close(this->m_sock);
 }
 
-int XTcp::Recv(char *buf, int len)
+int XTcp::Recv(char *buf, int len) const
 {
     return recv(this->m_sock, buf, len, 0);
 }
 
-int XTcp::Send(const char *buf, int len)
+int XTcp::Send(const char *buf, int len) const
 {
     int cnt = 0;
     while (cnt != len)
@@ -140,7 +137,7 @@ int XTcp::Send(const char *buf, int len)
     return cnt;
 }
 
-bool XTcp::SetBlock(bool block)
+bool XTcp::SetBlock(bool block) const
 {
     if (this->m_sock <= 0)
     {

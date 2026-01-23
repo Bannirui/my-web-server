@@ -6,6 +6,7 @@
 
 #include <string>
 #include <regex>
+#include <utility>
 #include <unistd.h>
 
 #include "http/protocol/x_http_request.h"
@@ -15,7 +16,7 @@
 #include "net/x_send_file.h"
 
 XWorker::XWorker(XTcp client, std::shared_ptr<const XHttpDispatcher> dispatcher)
-    : m_client(std::move(client)), m_dispatcher(dispatcher)
+    : m_client(client), m_dispatcher(std::move(dispatcher))
 {
 }
 

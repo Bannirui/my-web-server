@@ -15,8 +15,8 @@ public:
     int  CreateSocket();
     bool Bind(uint16_t port);
     bool Connect(const std::string &ip, uint16_t port, int timeout_ms = 1000);
-    XTcp Accept();
-    void Close();
+    XTcp Accept() const;
+    void Close() const;
 
     // 负责IO
     /**
@@ -25,19 +25,19 @@ public:
      * @param len the max bytes of buf, exclude 1 space for \0 for c-style string, if the buf is char[1024], len=1023
      * @return receive bytes actually, including \0 char for c-style string
      */
-    int Recv(char *buf, int len);
+    int Recv(char *buf, int len) const;
     /**
      *
      * @param buf
      * @param len the bytes of buf, including 1 \0 space for c-string, if the buf="ok\n" then len=4
      * @return send bytes actually
      */
-    int Send(const char *buf, int len);
+    int Send(const char *buf, int len) const;
     /**
      * set socket non-blocked
      * @param block true determines non-blocking
      */
-    bool SetBlock(bool block = false);
+    bool SetBlock(bool block = false) const;
 
     // socket信息
     int         get_sock() const { return this->m_sock; }
