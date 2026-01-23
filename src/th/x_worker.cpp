@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include "http/protocol/x_http_request.h"
-#include "http/protocol/x_http_resp.h"
+#include "http/protocol/x_http_response.h"
 #include "http/x_http_dispatcher.h"
 #include "http/x_http_request_parser.h"
 #include "net/x_send_file.h"
@@ -33,7 +33,7 @@ void XWorker::operator()()
         return;
     }
     // parse request line
-    XHttpResp resp;
+    XHttpResponse resp;
     this->m_dispatcher->Dispatch(req, resp);
 
     // send header

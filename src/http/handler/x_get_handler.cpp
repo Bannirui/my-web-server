@@ -8,10 +8,10 @@
 #include <sys/stat.h>
 
 #include "http/protocol/x_http_request.h"
-#include "http/protocol/x_http_resp.h"
+#include "http/protocol/x_http_response.h"
 #include "log/x_log.h"
 
-void XGetHandler::Handle(const XHttpRequest &req, XHttpResp &resp)
+void XGetHandler::Handle(const XHttpRequest &req, XHttpResponse &resp)
 {
     std::string uri      = req.m_uri == "/" ? "/index.html" : req.m_uri;
     std::string filePath = "www" + uri;

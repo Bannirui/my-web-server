@@ -7,7 +7,7 @@
 #include "log/x_dump.h"
 #include "http/x_http_client.h"
 #include "http/protocol/x_http_request.h"
-#include "http/protocol/x_http_resp.h"
+#include "http/protocol/x_http_response.h"
 
 int main(int argc, char *argv[])
 {
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     req.m_version = "HTTP/1.1";
     req.SetHeader("Host", host + ": " + std::to_string(port));
 
-    XHttpResp resp;
+    XHttpResponse resp;
     if (!client.Request(req, resp))
     {
         XLOG_ERROR("http request failed");

@@ -4,10 +4,9 @@
 
 #include "http/handler/x_delete_handler.h"
 
-#include "http/protocol/x_http_request.h"
-#include "http/protocol/x_http_resp.h"
+#include "http/protocol/x_http_response.h"
 
-void XDeleteHandler::Handle(const XHttpRequest &req, XHttpResp &resp)
+void XDeleteHandler::Handle(const XHttpRequest &req, XHttpResponse &resp)
 {
     // todo
     resp.m_status      = 500;

@@ -8,5 +8,5 @@
 class XPutHandler : public IHttpHandler
 {
 public:
-    void Handle(const XHttpRequest &req, XHttpResp &resp) override;
+    void Handle(const XHttpRequest &req, XHttpResponse &resp) override;
 };

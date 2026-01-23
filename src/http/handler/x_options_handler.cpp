@@ -4,10 +4,9 @@
 
 #include "http/handler/x_options_handler.h"
 
-#include "http/protocol/x_http_request.h"
-#include "http/protocol/x_http_resp.h"
+#include "http/protocol/x_http_response.h"
 
-void XOptionsHandler::Handle(const XHttpRequest &req, XHttpResp &resp)
+void XOptionsHandler::Handle(const XHttpRequest &req, XHttpResponse &resp)
 {
     // todo
     resp.m_status      = 500;

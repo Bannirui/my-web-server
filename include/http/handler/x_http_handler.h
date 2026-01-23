@@ -5,13 +5,13 @@
 #pragma once
 
 struct XHttpRequest;
-struct XHttpResp;
+struct XHttpResponse;
 
 class IHttpHandler
 {
 public:
-    virtual ~IHttpHandler()                                       = default;
-    virtual void Handle(const XHttpRequest &req, XHttpResp &resp) = 0;
+    virtual ~IHttpHandler()                                           = default;
+    virtual void Handle(const XHttpRequest &req, XHttpResponse &resp) = 0;
 
 protected:
     IHttpHandler() = default;

@@ -11,13 +11,13 @@
 
 enum class HttpMethod;
 struct XHttpRequest;
-struct XHttpResp;
+struct XHttpResponse;
 
 class XHttpDispatcher
 {
 public:
     void Register(HttpMethod method, std::unique_ptr<IHttpHandler> handler);
-    void Dispatch(const XHttpRequest &req, XHttpResp &resp) const;
+    void Dispatch(const XHttpRequest &req, XHttpResponse &resp) const;
 
 private:
     std::unordered_map<HttpMethod, std::unique_ptr<IHttpHandler>> m_handlers;

@@ -6,14 +6,14 @@
 
 #include "http/handler/x_http_handler.h"
 #include "http/protocol/x_http_request.h"
-#include "http/protocol/x_http_resp.h"
+#include "http/protocol/x_http_response.h"
 
 void XHttpDispatcher::Register(HttpMethod method, std::unique_ptr<IHttpHandler> handler)
 {
     this->m_handlers[method] = std::move(handler);
 }
 
-void XHttpDispatcher::Dispatch(const XHttpRequest &req, XHttpResp &resp) const
+void XHttpDispatcher::Dispatch(const XHttpRequest &req, XHttpResponse &resp) const
 {
     auto it = this->m_handlers.find(req.m_method);
     if (it == this->m_handlers.end())

@@ -7,7 +7,7 @@
 #include <sstream>
 
 #include "http/protocol/x_http_request.h"
-#include "http/protocol/x_http_resp.h"
+#include "http/protocol/x_http_response.h"
 #include "x_string.h"
 #include "log/x_dump.h"
 #include "log/x_log.h"
@@ -24,7 +24,7 @@ bool XHttpClient::Connect(const std::string &host, uint16_t port, int timeout_ms
     return this->m_tcp.Connect(host.c_str(), port, timeout_ms);
 }
 
-bool XHttpClient::Request(XHttpRequest &req, XHttpResp &resp)
+bool XHttpClient::Request(XHttpRequest &req, XHttpResponse &resp)
 {
     std::string remoteHost = this->m_tcp.RemoteIP();
     uint16_t    remotePort = this->m_tcp.RemotePort();
@@ -58,7 +58,7 @@ bool XHttpClient::sendAll(const std::string &data)
     return true;
 }
 
-bool XHttpClient::readResponse(XHttpResp &resp)
+bool XHttpClient::readResponse(XHttpResponse &resp)
 {
     std::string header;
     if (!this->readHeader(header))
@@ -113,7 +113,7 @@ bool XHttpClient::readBody(XHttpBody &body, size_t len)
     return true;
 }
 
-void XHttpClient::parseHeader(const std::string &header, XHttpResp &resp)
+void XHttpClient::parseHeader(const std::string &header, XHttpResponse &resp)
 {
     std::istringstream iss(header);
     std::string        line;

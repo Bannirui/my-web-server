@@ -9,7 +9,7 @@
 #include "x_tcp.h"
 
 struct XHttpRequest;
-struct XHttpResp;
+struct XHttpResponse;
 struct XHttpBody;
 
 /**
@@ -30,15 +30,15 @@ public:
     /**
      * 在请求前可能还会对request进行修复 不能加const修饰
      */
-    bool Request(XHttpRequest &req, XHttpResp &resp);
+    bool Request(XHttpRequest &req, XHttpResponse &resp);
     void Close();
 
 private:
     bool sendAll(const std::string &data);
-    bool readResponse(XHttpResp &resp);
+    bool readResponse(XHttpResponse &resp);
     bool readHeader(std::string &out);
     bool readBody(XHttpBody &body, size_t len);
-    void parseHeader(const std::string &header, XHttpResp &resp);
+    void parseHeader(const std::string &header, XHttpResponse &resp);
 
 private:
     // 目标host
