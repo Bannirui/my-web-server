@@ -8,6 +8,7 @@
 
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <sys/eventfd.h>
 
 bool XEpollPoller::Init()
 {
@@ -51,7 +52,7 @@ int XEpollPoller::Wait(std::vector<XEvent> &events, int timeout_ms)
     return n;
 }
 
-int XEpollPoller::Wait(std::vector<XEvent> &events, int timeout_ms)
+void XEpollPoller::Wakeup()
 {
     uint64_t one = 1;
     // 写eventfd epoll会立刻返回

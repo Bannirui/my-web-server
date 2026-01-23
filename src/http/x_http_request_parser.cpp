@@ -58,7 +58,7 @@ bool XHttpRequestParser::readHeader(XTcp &client, std::string &out)
 bool XHttpRequestParser::readBody(XTcp &client, std::string &body, size_t len)
 {
     body.reserve(len);
-    char buf[1024];
+    char buf[1024] = {0};
     while (body.size() < len)
     {
         int n = client.Recv(buf, std::min(sizeof(buf), len - body.size()));
@@ -66,6 +66,7 @@ bool XHttpRequestParser::readBody(XTcp &client, std::string &body, size_t len)
         {
             return false;
         }
+        buf[n] = '\0';
         body.append(buf, n);
     }
     return true;
