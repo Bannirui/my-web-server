@@ -19,8 +19,6 @@ void XHttpDispatcher::Dispatch(const XHttpRequest &req, XHttpResponse &resp) con
     if (it == this->m_handlers.end())
     {
         resp.m_status      = 405;
-        // todo
-        // resp.m_contentType = CONTENT_TYPE_HTML;
         resp.m_body.m_type = XHttpBody::Type::Memory;
         resp.m_body.m_data = "<h2>Method Not Allowed</h1>";
         return;

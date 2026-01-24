@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <cstdint>
 #include <thread>
 
 #include "x_http_dispatcher.h"

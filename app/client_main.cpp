@@ -21,9 +21,9 @@ int main(int argc, char *argv[])
         return -1;
     }
     XHttpRequest req;
-    req.m_method  = HttpMethod::GET_;
-    req.m_uri     = "/index.html";
-    req.m_version = "HTTP/1.1";
+    req.m_method    = HttpMethod::GET_;
+    req.m_uri.m_uri = "/index.html";
+    req.m_version   = "HTTP/1.1";
     req.SetHeader("Host", host + ": " + std::to_string(port));
 
     XHttpResponse resp;
