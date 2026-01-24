@@ -47,6 +47,7 @@ public:
     std::string Serialize() const;
     bool        KeepAlive() const;
     bool        HasHeader(const std::string &k) const { return this->m_headers.find(k) != this->m_headers.end(); }
+    std::string GetHeader(const std::string &name) const { return this->m_headers.at(name); };
     // 往header里面添加内容
     void SetHeader(std::string k, std::string v) { this->m_headers.emplace(std::move(k), std::move(v)); }
 };

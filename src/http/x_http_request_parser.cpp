@@ -7,7 +7,7 @@
 #include <sstream>
 
 #include "x_tcp.h"
-#include "../../include/http/protocol/x_http_request.h"
+#include "http/protocol/x_http_request.h"
 #include "x_string.h"
 
 bool XHttpRequestParser::ReadRequest(XTcp &client, XHttpRequest &req)
@@ -21,9 +21,10 @@ bool XHttpRequestParser::ReadRequest(XTcp &client, XHttpRequest &req)
     {
         return false;
     }
-    if (auto it = req.m_headers.find("Content-Length"); it != req.m_headers.end())
+    if (req.HasHeader(XHttpRequest::HEADER_CONTENT_LENGTH))
     {
-        size_t len = std::stoul(it->second);
+        std::string length = req.GetHeader(XHttpRequest::HEADER_CONTENT_LENGTH);
+        size_t      len    = std::stoul(length);
         if (!this->readBody(client, req.m_body, len))
         {
             return false;
