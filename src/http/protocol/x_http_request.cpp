@@ -30,7 +30,7 @@ std::string XHttpRequest::Serialize() const
     // request line
     out.append(MethodToString(this->m_method));
     out.append(" ");
-    out.append(this->m_uri);
+    out.append(this->m_uri.m_uri);
     out.append(" ");
     out.append(this->m_version);
     out.append("\r\n");

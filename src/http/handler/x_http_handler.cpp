@@ -10,9 +10,9 @@
 #include "http/protocol/x_http_request.h"
 #include "http/protocol/x_http_response.h"
 
-void HttpHandler::respondFile(const std::string &uri, XHttpResponse &resp) const
+void HttpHandler::respondFile(const std::string &fileName, XHttpResponse &resp) const
 {
-    std::string filePath = HTML_FILE_DIRECTORY + uri;
+    std::string filePath = HTML_FILE_DIRECTORY + fileName;
     int         fd       = open(filePath.c_str(), O_RDONLY);
     if (fd < 0)
     {

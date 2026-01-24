@@ -5,10 +5,12 @@
 #include "http/x_http_request_parser.h"
 
 #include <sstream>
+#include <regex>
 
 #include "x_tcp.h"
 #include "http/protocol/x_http_request.h"
 #include "x_string.h"
+#include "http/handler/x_http_handler.h"
 
 bool XHttpRequestParser::ReadRequest(XTcp &client, XHttpRequest &req)
 {
@@ -84,8 +86,15 @@ bool XHttpRequestParser::parseHeader(const std::string &header, XHttpRequest &re
     // request line
     std::istringstream iss(header.substr(0, pos));
     std::string        method;
-    iss >> method >> req.m_uri >> req.m_version;
+    // /xxx.html
+    std::string uri;
+    iss >> method >> uri >> req.m_version;
     req.m_method = ParseMethod(method);
+    if (uri.empty() || "/" == uri)
+    {
+        uri.append("/").append(HTML_URI_INDEX);
+    }
+    this->parseUri(uri, req);
     // headers
     size_t start = pos + 2;
     while (true)
@@ -107,4 +116,31 @@ bool XHttpRequestParser::parseHeader(const std::string &header, XHttpRequest &re
         start = end + 2;
     }
     return true;
+}
+
+void XHttpRequestParser::parseUri(std::string &uri, XHttpRequest &req)
+{
+    if (uri.empty() || "/" == uri)
+    {
+        req.m_uri.m_uri = "/";
+        return;
+    }
+    // /a.html
+    std::string pattern = "^/([a-zA-Z0-9]*([.].*)?)";
+    std::regex  r(pattern);
+    std::smatch match;
+    std::regex_search(uri, match, r);
+    if (match.size() == 0)
+    {
+        req.m_uri.m_uri = "/";
+        return;
+    }
+    req.m_uri.m_uri           = uri;
+    req.m_uri.m_fileName      = match[1];
+    std::string fileExtension = match[2];
+    if (!fileExtension.empty())
+    {
+        // file ext is '.html', just retain 'html'
+        req.m_uri.m_fileExtension = fileExtension.substr(1, fileExtension.size() - 1);
+    }
 }

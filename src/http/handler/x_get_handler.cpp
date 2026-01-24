@@ -9,6 +9,5 @@
 
 void XGetHandler::Handle(const XHttpRequest &req, XHttpResponse &resp)
 {
-    std::string uri = req.m_uri == "/" ? HTML_URI_INDEX : req.m_uri;
-    this->HttpHandler::respondFile(uri, resp);
+    this->HttpHandler::respondFile(req.m_uri.m_fileName, resp);
 }

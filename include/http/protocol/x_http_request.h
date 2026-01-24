@@ -9,6 +9,16 @@
 
 #include "x_http_method.h"
 
+struct URI
+{
+    // /index.html
+    std::string m_uri = "/";
+    // index.html
+    std::string m_fileName;
+    // html
+    std::string m_fileExtension;
+};
+
 // for GET request, respond
 // GET /index.html HTTP/1.1\r\n
 // Host: 127.0.0.1:9527\r\n
@@ -31,8 +41,8 @@ public:
     static constexpr const char *HEADER_CONTENT_LENGTH = "Content-Length";
     static constexpr const char *HEADER_CONNECTION     = "Connection";
 
-    HttpMethod                                   m_method  = HttpMethod::UNKNOWN_;
-    std::string                                  m_uri     = "/";
+    HttpMethod                                   m_method = HttpMethod::UNKNOWN_;
+    URI                                          m_uri;
     std::string                                  m_version = "HTTP/1.1";
     std::unordered_map<std::string, std::string> m_headers;
     std::string                                  m_body;
