@@ -8,7 +8,7 @@
 #include "http/protocol/x_http_request.h"
 #include "http/protocol/x_http_response.h"
 
-void XHttpDispatcher::Register(HttpMethod method, std::unique_ptr<IHttpHandler> handler)
+void XHttpDispatcher::Register(HttpMethod method, std::unique_ptr<HttpHandler> handler)
 {
     this->m_handlers[method] = std::move(handler);
 }

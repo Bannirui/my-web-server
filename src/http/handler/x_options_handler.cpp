@@ -8,8 +8,5 @@
 
 void XOptionsHandler::Handle(const XHttpRequest &req, XHttpResponse &resp)
 {
-    // todo
-    resp.m_status      = 500;
-    resp.m_body.m_type = XHttpBody::Type::Memory;
-    resp.m_body.m_data = "<h2>Not Support Options</h1>";
+    this->HttpHandler::respondFile(HTML_URI_NOT_SUPPORT, resp);
 }

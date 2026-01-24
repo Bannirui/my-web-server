@@ -16,9 +16,9 @@ struct XHttpResponse;
 class XHttpDispatcher
 {
 public:
-    void Register(HttpMethod method, std::unique_ptr<IHttpHandler> handler);
+    void Register(HttpMethod method, std::unique_ptr<HttpHandler> handler);
     void Dispatch(const XHttpRequest &req, XHttpResponse &resp) const;
 
 private:
-    std::unordered_map<HttpMethod, std::unique_ptr<IHttpHandler>> m_handlers;
+    std::unordered_map<HttpMethod, std::unique_ptr<HttpHandler>> m_handlers;
 };

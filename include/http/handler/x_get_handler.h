@@ -5,7 +5,7 @@
 #pragma once
 #include "x_http_handler.h"
 
-class XGetHandler : public IHttpHandler
+class XGetHandler : public HttpHandler
 {
 public:
     void Handle(const XHttpRequest &req, XHttpResponse &resp) override;

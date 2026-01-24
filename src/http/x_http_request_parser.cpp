@@ -21,6 +21,7 @@ bool XHttpRequestParser::ReadRequest(XTcp &client, XHttpRequest &req)
     {
         return false;
     }
+    // todo, recognize the php request
     if (req.HasHeader(XHttpRequest::HEADER_CONTENT_LENGTH))
     {
         std::string length = req.GetHeader(XHttpRequest::HEADER_CONTENT_LENGTH);

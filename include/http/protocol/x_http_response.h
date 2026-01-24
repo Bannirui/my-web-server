@@ -19,12 +19,13 @@ struct XHttpBody
         File
     };
 
+    // memory or file. fd and size must be specified if type is file
     Type m_type = Type::None;
 
-    // memory body
+    // memory body or the file content
     std::string m_data;
 
-    // file body
+    // file body, if type is file, fd and size both the description of that html file
     int   m_fd   = -1;
     off_t m_size = 0;
 
