@@ -141,6 +141,7 @@ void XHttpRequestParser::parseUri(std::string &uri, XHttpRequest &req)
     if (!fileExtension.empty())
     {
         // file ext is '.html', just retain 'html'
-        req.m_uri.m_fileExtension = fileExtension.substr(1, fileExtension.size() - 1);
+        fileExtension             = fileExtension.substr(1, fileExtension.size() - 1);
+        req.m_uri.m_fileExtension = URI::ParseFileType(fileExtension);
     }
 }

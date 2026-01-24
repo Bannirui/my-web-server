@@ -11,12 +11,30 @@
 
 struct URI
 {
+    // file extension mapping the file type, html or php
+    enum class Type
+    {
+        UN_KNOWN,
+        HTML,
+        PHP
+    };
+
+    /**
+     * @param fileExt 'a.html'
+     */
+    static Type ParseFileType(std::string &fileExt)
+    {
+        if (fileExt == "html") return Type::HTML;
+        if (fileExt == "php") return Type::PHP;
+        return Type::UN_KNOWN;
+    }
+
     // /index.html
     std::string m_uri = "/";
     // index.html
     std::string m_fileName;
     // html
-    std::string m_fileExtension;
+    Type m_fileExtension;
 };
 
 // for GET request, respond
